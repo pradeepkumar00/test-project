@@ -1,0 +1,32 @@
+{
+  "port": "PORT",
+  "appUrl": "APP_URL",
+  "mongodb": {
+    "uri": "MONGODB_URI"
+  },
+  "redis": {
+    "url": "REDIS_URL",
+    "host": "REDIS_HOST",
+    "port": "REDIS_PORT",
+    "password": "REDIS_PASSWORD"
+  },
+  "jwt": {
+    "secret": "JWT_SECRET",
+    "expiresIn": "JWT_EXPIRES_IN"
+  },
+  "adminServer": {
+    "port": "ADMIN_PORT"
+  },
+  "adminJwt": {
+    "secret": "ADMIN_JWT_SECRET",
+    "expiresIn": "ADMIN_JWT_EXPIRES_IN"
+  },
+  "otp": {
+    "expiryMinutes": "OTP_EXPIRY_MINUTES"
+  },
+  "wallet": {
+    "minDeposit": "MIN_DEPOSIT",
+    "minWithdraw": "MIN_WITHDRAW",
+    "referralBonus": "REFERRAL_BONUS"
+  }
+}

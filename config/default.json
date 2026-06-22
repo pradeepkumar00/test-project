@@ -1,0 +1,62 @@
+{
+  "port": 5000,
+  "appName": "BigFun",
+  "appUrl": "http://localhost:5000",
+  "mongodb": {
+    "uri": "mongodb://127.0.0.1:27017/bigfun"
+  },
+  "redis": {
+    "url": "redis://127.0.0.1:6379",
+    "host": "127.0.0.1",
+    "port": 6379
+  },
+  "jwt": {
+    "secret": "dev-secret-change-in-production",
+    "expiresIn": "7d"
+  },
+  "adminServer": {
+    "port": 5050
+  },
+  "adminJwt": {
+    "secret": "admin-secret-change-in-production",
+    "expiresIn": "1d"
+  },
+  "otp": {
+    "expiryMinutes": 10
+  },
+  "wallet": {
+    "minDeposit": 100,
+    "minWithdraw": 110,
+    "referralBonus": 50,
+    "upiId": "Q267911041@ybl",
+    "upiQrImage": "/assets/upi-qr.png",
+    "paymentLabel": "UPI Details"
+  },
+  "battle": {
+    "platformFeePercent": 2.5,
+    "minEntryFee": 10,
+    "maxEntryFee": 100000,
+    "gameTypes": [
+      { "slug": "ludo-classic", "name": "BIG-FUN LUDO CLASSIC", "status": "live" },
+      { "slug": "ludo-speed", "name": "BIG-FUN LUDO SPEED", "status": "coming_soon" }
+    ]
+  },
+  "currency": "INR",
+  "currencySymbol": "₹",
+  "supportEmail": "support@bigfun.in",
+  "paymentMethods": ["UPI", "Paytm", "PhonePe", "Bank Transfer"],
+  "withdrawMethods": ["UPI", "Bank Transfer"],
+  "games": {
+    "colorPrediction1Min": { "name": "Win Go 1 Min", "duration": 60, "type": "color" },
+    "colorPrediction3Min": { "name": "Win Go 3 Min", "duration": 180, "type": "color" },
+    "colorPrediction5Min": { "name": "Win Go 5 Min", "duration": 300, "type": "color" }
+  },
+  "colorMultipliers": {
+    "red": 2,
+    "green": 2,
+    "violet": 4.5
+  },
+  "numberMultipliers": {
+    "exact": 9
+  }
+}

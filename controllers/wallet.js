@@ -1,0 +1,231 @@
+const config = require('config');
+const { body } = require('express-validator');
+const Transaction = require('../models/Transaction');
+const Deposit = require('../models/Deposit');
+const Withdraw = require('../models/Withdraw');
+const User = require('../models/User');
+const { submitDepositRequest, completeDeposit, recordTransaction } = require('../services/paymentService');
+
+const depositSubmitValidation = [
+  body('amount')
+    .isFloat({ min: config.get('wallet.minDeposit') })
+    .withMessage(`Minimum deposit is ₹${config.get('wallet.minDeposit')}`),
+  body('utrNumber').notEmpty().trim().withMessage('UTR number is required'),
+  body('paymentMethod').optional().isIn(config.get('paymentMethods')),
+];
+
+const withdrawValidation = [
+  body('amount')
+    .isFloat({ min: config.get('wallet.minWithdraw') })
+    .withMessage(`Minimum withdrawal is ₹${config.get('wallet.minWithdraw')}`),
+  body('method').isIn(config.get('withdrawMethods')).withMessage('Invalid withdrawal method'),
+  body('password').notEmpty().withMessage('Password required for withdrawal'),
+];
+
+const getBalance = async (req, res) => {
+  res.json({
+    success: true,
+    walletBalance: req.user.balance + req.user.bonusBalance,
+    income: req.user.income,
+    balance: {
+      main: req.user.balance,
+      bonus: req.user.bonusBalance,
+      total: req.user.balance + req.user.bonusBalance,
+    },
+  });
+};
+
+const getPaymentDetails = async (req, res) => {
+  res.json({
+    success: true,
+    payment: {
+      label: config.get('wallet.paymentLabel'),
+      upiId: config.get('wallet.upiId'),
+      upiQrImage: config.get('wallet.upiQrImage'),
+      minDeposit: config.get('wallet.minDeposit'),
+      instructions: 'Pay via UPI, then enter amount and UTR number below to submit for admin approval.',
+    },
+  });
+};
+
+const submitDeposit = async (req, res, next) => {
+  try {
+    const { amount, utrNumber, paymentMethod = 'UPI' } = req.body;
+
+    const pendingCount = await Deposit.countDocuments({
+      user: req.user._id,
+      status: 'pending',
+    });
+
+    if (pendingCount >= 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have pending deposit requests. Please wait for admin approval.',
+      });
+    }
+
+    const deposit = await submitDepositRequest({
+      userId: req.user._id,
+      amount: parseFloat(amount),
+      utrNumber: utrNumber.trim(),
+      paymentMethod,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Deposit submitted. Admin will verify and approve shortly.',
+      deposit: {
+        id: deposit._id,
+        orderId: deposit.orderId,
+        amount: deposit.amount,
+        utrNumber: deposit.utrNumber,
+        status: deposit.status,
+        createdAt: deposit.createdAt,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const requestWithdraw = async (req, res, next) => {
+  try {
+    const { amount, method, password, upiId, accountNumber, ifsc, accountHolder } = req.body;
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!(await user.comparePassword(password))) {
+      return res.status(400).json({ success: false, message: 'Incorrect password' });
+    }
+
+    if (user.balance < amount) {
+      return res.status(400).json({ success: false, message: 'Insufficient balance' });
+    }
+
+    const pendingWithdraw = await Withdraw.findOne({
+      user: user._id,
+      status: { $in: ['pending', 'processing'] },
+    });
+
+    if (pendingWithdraw) {
+      return res.status(400).json({ success: false, message: 'You already have a pending withdrawal' });
+    }
+
+    const balanceBefore = user.balance;
+    user.balance -= amount;
+    user.totalWithdrawn += amount;
+    await user.save();
+
+    const withdraw = await Withdraw.create({
+      user: user._id,
+      amount,
+      method,
+      upiId: upiId || user.bankDetails?.upiId,
+      accountNumber: accountNumber || user.bankDetails?.accountNumber,
+      ifsc: ifsc || user.bankDetails?.ifsc,
+      accountHolder: accountHolder || user.bankDetails?.accountHolder,
+      status: 'pending',
+    });
+
+    await recordTransaction({
+      userId: user._id,
+      type: 'withdraw',
+      amount: -amount,
+      balanceBefore,
+      balanceAfter: user.balance,
+      status: 'pending',
+      paymentMethod: method,
+      referenceId: withdraw._id.toString(),
+      description: `Withdrawal request via ${method}`,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Withdrawal request submitted. Processing within 24 hours.',
+      withdraw: {
+        id: withdraw._id,
+        amount: withdraw.amount,
+        method: withdraw.method,
+        status: withdraw.status,
+        createdAt: withdraw.createdAt,
+      },
+      balance: user.balance,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTransactions = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const type = req.query.type;
+
+    const filter = { user: req.user._id };
+    if (type) filter.type = type;
+
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
+      Transaction.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      transactions,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDeposits = async (req, res, next) => {
+  try {
+    const deposits = await Deposit.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(50);
+    res.json({ success: true, deposits });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getWithdrawals = async (req, res, next) => {
+  try {
+    const withdrawals = await Withdraw.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(50);
+    res.json({ success: true, withdrawals });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateBankDetails = async (req, res, next) => {
+  try {
+    const { accountHolder, accountNumber, ifsc, upiId, bankName } = req.body;
+    req.user.bankDetails = {
+      accountHolder: accountHolder || req.user.bankDetails?.accountHolder,
+      accountNumber: accountNumber || req.user.bankDetails?.accountNumber,
+      ifsc: ifsc || req.user.bankDetails?.ifsc,
+      upiId: upiId || req.user.bankDetails?.upiId,
+      bankName: bankName || req.user.bankDetails?.bankName,
+    };
+    await req.user.save();
+    res.json({ success: true, message: 'Bank details updated', bankDetails: req.user.bankDetails });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  depositSubmitValidation,
+  withdrawValidation,
+  getBalance,
+  getPaymentDetails,
+  submitDeposit,
+  requestWithdraw,
+  getTransactions,
+  getDeposits,
+  getWithdrawals,
+  updateBankDetails,
+};
