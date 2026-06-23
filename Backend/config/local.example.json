@@ -7,7 +7,7 @@
   },
   "redis": {
     "url": "redis://127.0.0.1:6379",
-    "password": "your-redis-password-if-required"
+    "password": "your-redis-password"
   },
   "mongodb": {
     "uri": "mongodb://127.0.0.1:27017/bigfun"

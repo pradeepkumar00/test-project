@@ -1,32 +1,31 @@
 {
-  "name": "bigfun-backend",
+  "name": "bigfun",
   "version": "1.0.0",
-  "description": "Backend API for color prediction gaming platform",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "admin": "node admin-server/index.js",
-    "dev": "node --watch index.js",
-    "dev:admin": "node --watch admin-server/index.js",
-    "seed": "node scripts/seed.js"
-  },
-  "keywords": [
-    "gaming",
-    "color-prediction",
-    "api"
+  "private": true,
+  "description": "BigFun gaming platform monorepo",
+  "workspaces": [
+    "Backend",
+    "frontend/bigfun-frontend",
+    "frontend/bigfun-admin"
   ],
-  "author": "Abhishek",
-  "license": "ISC",
-  "dependencies": {
-    "bcryptjs": "^3.0.2",
-    "config": "^4.4.1",
-    "cors": "^2.8.5",
-    "express": "^5.2.1",
-    "express-validator": "^7.2.1",
-    "ioredis": "^5.11.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.16.0",
-    "morgan": "^1.11.0",
-    "node-cron": "^4.1.0"
+  "scripts": {
+    "install:all": "npm install",
+    "start:api": "npm run start -w bigfun-backend",
+    "start:admin-api": "npm run admin -w bigfun-backend",
+    "dev:api": "npm run dev -w bigfun-backend",
+    "dev:admin-api": "npm run dev:admin -w bigfun-backend",
+    "start:frontend": "npm run start -w bigfun-frontend",
+    "start:admin": "npm run start -w bigfun-admin",
+    "seed": "npm run seed -w bigfun-backend",
+    "build:frontend": "npm run build -w bigfun-frontend",
+    "build:admin": "npm run build -w bigfun-admin",
+    "build": "npm run build:frontend && npm run build:admin",
+    "dev:all": "concurrently -n api,admin-api,web,admin -c blue,magenta,green,yellow \"npm run dev:api\" \"npm run dev:admin-api\" \"npm run start:frontend\" \"npm run start:admin\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

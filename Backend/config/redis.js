@@ -7,18 +7,26 @@ const connectRedis = async () => {
   if (redis) return redis;
 
   const redisConfig = config.get('redis');
-  const options = redisConfig.url
-    ? redisConfig.url
-    : {
-        host: redisConfig.host,
-        port: redisConfig.port,
-        password: redisConfig.password || undefined,
-        maxRetriesPerRequest: 3,
-        retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
-        connectTimeout: 5000,
-      };
+  const common = {
+    maxRetriesPerRequest: 3,
+    retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
+    connectTimeout: 5000,
+    keyPrefix: redisConfig.keyPrefix || undefined,
+  };
 
-  redis = new Redis(options);
+  if (redisConfig.url) {
+    redis = new Redis(redisConfig.url, {
+      ...common,
+      password: redisConfig.password || undefined,
+    });
+  } else {
+    redis = new Redis({
+      ...common,
+      host: redisConfig.host,
+      port: redisConfig.port,
+      password: redisConfig.password || undefined,
+    });
+  }
 
   try {
     await redis.ping();

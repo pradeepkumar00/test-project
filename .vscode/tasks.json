@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend API",
+      "type": "npm",
+      "script": "dev:api",
+      "path": ".",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Admin API",
+      "type": "npm",
+      "script": "dev:admin-api",
+      "path": ".",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "User Frontend",
+      "type": "npm",
+      "script": "start:frontend",
+      "path": ".",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Admin Portal",
+      "type": "npm",
+      "script": "start:admin",
+      "path": ".",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All (BigFun)",
+      "dependsOn": ["Backend API", "Admin API", "User Frontend", "Admin Portal"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

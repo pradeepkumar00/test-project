@@ -1,2 +1,28 @@
+# Dependencies
 node_modules/
-config/local.json
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+.angular/
+**/.angular/
+
+# Local secrets & env
+Backend/config/local.json
+.env
+.env.local
+
+# Logs & OS
+*.log
+npm-debug.log*
+.DS_Store
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Test coverage
+coverage/
+**/coverage/
