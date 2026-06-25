@@ -29,6 +29,14 @@ const connectRedis = async () => {
     });
   }
 
+  redis.on('error', (error) => {
+    logger.warn('Redis connection error', { message: error.message });
+  });
+
+  redis.on('reconnecting', () => {
+    logger.info('Redis reconnecting');
+  });
+
   try {
     await redis.ping();
     logger.info('Redis connected');

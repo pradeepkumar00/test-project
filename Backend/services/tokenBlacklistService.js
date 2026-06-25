@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { getRedis } = require('../config/redis');
+const logger = require('../utils/logger');
 
 const REVOKED_PREFIX = 'token:revoked';
 
@@ -44,10 +45,18 @@ const revokeToken = async (token, audience, secret) => {
 };
 
 const isTokenRevoked = async (decoded, token, audience) => {
-  const redis = getRedis();
-  const identifier = getTokenIdentifier(decoded, token);
-  const revoked = await redis.get(getRevokedKey(audience, identifier));
-  return Boolean(revoked);
+  try {
+    const redis = getRedis();
+    const identifier = getTokenIdentifier(decoded, token);
+    const revoked = await redis.get(getRevokedKey(audience, identifier));
+    return Boolean(revoked);
+  } catch (error) {
+    logger.warn('Token revocation check skipped (Redis unavailable)', {
+      audience,
+      message: error.message,
+    });
+    return false;
+  }
 };
 
 const createJwtId = () => crypto.randomUUID();

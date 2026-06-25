@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { verifyAdminToken } = require('../utils/adminToken');
 const { isTokenRevoked } = require('../services/tokenBlacklistService');
+const logger = require('../utils/logger');
 
 const adminAuth = async (req, res, next) => {
   try {
@@ -29,7 +30,15 @@ const adminAuth = async (req, res, next) => {
     req.authToken = token;
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: 'Invalid or expired admin token' });
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Invalid or expired admin token' });
+    }
+
+    logger.error('Admin auth failed', { message: error.message, name: error.name });
+    return res.status(503).json({
+      success: false,
+      message: 'Authentication service temporarily unavailable. Please try again.',
+    });
   }
 };
 
