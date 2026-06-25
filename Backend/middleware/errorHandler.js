@@ -1,5 +1,26 @@
+const logger = require('../utils/logger');
+
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return String(forwarded).split(',')[0].trim();
+  }
+
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+};
+
 const errorHandler = (err, req, res, next) => {
-  console.error(err);
+  logger.error('Request failed', {
+    method: req.method,
+    path: req.originalUrl || req.url,
+    ip: getClientIp(req),
+    statusCode: err.status || 500,
+    errorName: err.name,
+    message: err.message,
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+    actorId: req.admin?._id?.toString() || req.user?._id?.toString(),
+    actorType: req.admin ? 'admin' : req.user ? 'user' : 'anonymous',
+  });
 
   if (err.name === 'ValidationError') {
     return res.status(400).json({

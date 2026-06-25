@@ -1,15 +1,15 @@
 const express = require('express');
 const { body } = require('express-validator');
 const validate = require('../../middleware/validate');
-const authController = require('../controllers/auth');
-const dashboardController = require('../controllers/dashboard');
-const depositsController = require('../controllers/deposits');
-const battlesController = require('../controllers/battles');
-const usersController = require('../controllers/users');
-const withdrawalsController = require('../controllers/withdrawals');
-const kycController = require('../controllers/kyc');
-const transactionsController = require('../controllers/transactions');
-const { auth, superAdminOnly } = require('../middleware/auth');
+const { adminAuth, superAdminOnly } = require('../../middleware/adminAuth');
+const authController = require('../../controllers/admin/auth');
+const dashboardController = require('../../controllers/admin/dashboard');
+const depositsController = require('../../controllers/admin/deposits');
+const battlesController = require('../../controllers/admin/battles');
+const usersController = require('../../controllers/admin/users');
+const withdrawalsController = require('../../controllers/admin/withdrawals');
+const kycController = require('../../controllers/admin/kyc');
+const transactionsController = require('../../controllers/admin/transactions');
 
 const router = express.Router();
 
@@ -19,9 +19,10 @@ router.get('/health', (req, res) => {
 
 router.post('/auth/login', authController.loginValidation, validate, authController.login);
 
-router.use(auth);
+router.use(adminAuth);
 
 router.get('/auth/profile', authController.getProfile);
+router.post('/auth/logout', authController.logout);
 router.get('/dashboard', dashboardController.getDashboard);
 
 router.get('/deposits', depositsController.listDeposits);

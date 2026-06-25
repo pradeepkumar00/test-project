@@ -1,7 +1,7 @@
 {
   "port": 5000,
   "appName": "BigFun",
-  "appUrl": "http://localhost:5000",
+  "appUrl": "http://localhost:5200",
   "mongodb": {
     "uri": "mongodb://127.0.0.1:27017/bigfun"
   },
@@ -25,13 +25,38 @@
   "otp": {
     "expiryMinutes": 10
   },
+  "logging": {
+    "level": "info",
+    "format": "pretty",
+    "logRequestBody": true,
+    "logQuery": true,
+    "logHeaders": false,
+    "skipPaths": ["/api/health", "/api/admin/health"]
+  },
+  "sms": {
+    "provider": "console",
+    "otpMessageTemplate": "Your {appName} OTP for {purpose} is {otp}. Valid for {expiryMinutes} minutes. Do not share this code.",
+    "twilio": {
+      "accountSid": "",
+      "authToken": "",
+      "from": "",
+      "countryCode": "+91"
+    }
+  },
+  "firebase": {
+    "enabled": false,
+    "databaseURL": "",
+    "serviceAccountPath": "config/firebase-service-account.json"
+  },
   "wallet": {
     "minDeposit": 100,
     "minWithdraw": 110,
     "referralBonus": 50,
     "upiId": "Q267911041@ybl",
+    "upiPayeeName": "BigFun",
     "upiQrImage": "/assets/upi-qr.png",
-    "paymentLabel": "UPI Details"
+    "paymentLabel": "UPI Details",
+    "depositQrExpiryMinutes": 30
   },
   "battle": {
     "platformFeePercent": 2.5,

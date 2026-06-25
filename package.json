@@ -11,16 +11,15 @@
   "scripts": {
     "install:all": "npm install",
     "start:api": "npm run start -w bigfun-backend",
-    "start:admin-api": "npm run admin -w bigfun-backend",
     "dev:api": "npm run dev -w bigfun-backend",
-    "dev:admin-api": "npm run dev:admin -w bigfun-backend",
     "start:frontend": "npm run start -w bigfun-frontend",
     "start:admin": "npm run start -w bigfun-admin",
     "seed": "npm run seed -w bigfun-backend",
+    "onboard:superadmin": "npm run onboard:superadmin -w bigfun-backend --",
     "build:frontend": "npm run build -w bigfun-frontend",
     "build:admin": "npm run build -w bigfun-admin",
     "build": "npm run build:frontend && npm run build:admin",
-    "dev:all": "concurrently -n api,admin-api,web,admin -c blue,magenta,green,yellow \"npm run dev:api\" \"npm run dev:admin-api\" \"npm run start:frontend\" \"npm run start:admin\""
+    "dev:all": "concurrently -n api,web,admin -c blue,green,yellow \"npm run dev:api\" \"npm run start:frontend\" \"npm run start:admin\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

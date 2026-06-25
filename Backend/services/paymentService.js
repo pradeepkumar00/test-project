@@ -25,7 +25,7 @@ const recordTransaction = async ({
     metadata,
   });
 
-const submitDepositRequest = async ({ userId, amount, utrNumber, paymentMethod = 'UPI' }) => {
+const submitDepositRequest = async ({ userId, amount, utrNumber, paymentMethod = 'UPI', orderId = null }) => {
   const { generateOrderId } = require('../utils/helpers');
   const Deposit = require('../models/Deposit');
 
@@ -34,14 +34,20 @@ const submitDepositRequest = async ({ userId, amount, utrNumber, paymentMethod =
     throw new Error('This UTR number has already been submitted');
   }
 
-  const orderId = generateOrderId();
+  const finalOrderId = orderId || generateOrderId();
+  const existingOrder = await Deposit.findOne({ orderId: finalOrderId });
+  if (existingOrder) {
+    throw new Error('Deposit session expired. Please generate a new QR code.');
+  }
+
   return Deposit.create({
     user: userId,
     amount,
     paymentMethod,
     utrNumber,
-    orderId,
+    orderId: finalOrderId,
     status: 'pending',
+    metadata: orderId ? { generatedViaQr: true } : {},
   });
 };
 
@@ -76,6 +82,9 @@ const completeDeposit = async (deposit, utrNumber, reviewedBy = null) => {
     description: `Deposit approved via ${deposit.paymentMethod}`,
     metadata: { utrNumber: deposit.utrNumber, depositId: deposit._id },
   });
+
+  const { publishWalletUpdate } = require('./firebaseService');
+  await publishWalletUpdate(user, 'deposit_approved', { depositId: deposit._id.toString() });
 
   return { user, deposit };
 };

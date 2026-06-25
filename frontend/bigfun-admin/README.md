@@ -10,7 +10,7 @@ Angular 19 admin dashboard for managing deposits, withdrawals, battles, users, a
 npm run start:admin
 ```
 
-Portal: **http://localhost:5201** (API proxied to `http://localhost:5050`)
+Portal: **http://localhost:5201** (API proxied to `http://localhost:5000`, routes under `/api/admin`)
 
 ## Run from this folder
 
@@ -32,12 +32,15 @@ npm start
 | `/kyc` | Pending KYC review |
 | `/transactions` | Transaction log |
 
-## Demo Login
+## Admin access
 
+Create a superadmin for local dev (never commit real production passwords):
+
+```bash
+npm run onboard:superadmin -- --mobile <10-digit> --password '<strong-password>' --name "Admin"
 ```
-Mobile: 9999999999
-Password: admin123
-```
+
+Do not expose admin credentials on the login page or in public docs.
 
 ## Structure
 

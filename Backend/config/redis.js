@@ -1,5 +1,6 @@
 const config = require('config');
 const Redis = require('ioredis');
+const logger = require('../utils/logger');
 
 let redis;
 
@@ -30,7 +31,7 @@ const connectRedis = async () => {
 
   try {
     await redis.ping();
-    console.log('Redis connected');
+    logger.info('Redis connected');
     return redis;
   } catch (error) {
     redis.disconnect();

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5B21B6"/>
+      <stop offset="0.5" stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#4C1D95"/>
+    </linearGradient>
+    <linearGradient id="dice" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="1" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="520" rx="24" fill="url(#bg1)"/>
+  <circle cx="320" cy="80" r="60" fill="#A78BFA" opacity="0.3"/>
+  <circle cx="60" cy="420" r="80" fill="#C4B5FD" opacity="0.2"/>
+  <text x="200" y="180" text-anchor="middle" fill="white" font-family="Arial Black, sans-serif" font-size="42" font-weight="900">LUDO</text>
+  <text x="200" y="230" text-anchor="middle" fill="#E9D5FF" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="4">CLASSIC</text>
+  <rect x="120" y="280" width="70" height="70" rx="14" fill="url(#dice)" transform="rotate(-12 155 315)"/>
+  <circle cx="145" cy="305" r="6" fill="#78350F"/>
+  <circle cx="165" cy="325" r="6" fill="#78350F"/>
+  <circle cx="155" cy="340" r="6" fill="#78350F"/>
+  <rect x="210" y="300" width="70" height="70" rx="14" fill="url(#dice)" transform="rotate(10 245 335)"/>
+  <circle cx="235" cy="325" r="6" fill="#78350F"/>
+  <circle cx="255" cy="345" r="6" fill="#78350F"/>
+  <rect x="155" y="370" width="90" height="90" rx="16" fill="white" opacity="0.15"/>
+  <circle cx="185" cy="400" r="8" fill="#EF4444"/>
+  <circle cx="215" cy="400" r="8" fill="#22C55E"/>
+  <circle cx="185" cy="430" r="8" fill="#FACC15"/>
+  <circle cx="215" cy="430" r="8" fill="#3B82F6"/>
+  <rect x="40" y="460" width="120" height="36" rx="18" fill="#22C55E"/>
+  <circle cx="62" cy="478" r="5" fill="white"/>
+  <text x="100" y="483" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="14" font-weight="700">LIVE</text>
+</svg>

@@ -1,13 +1,10 @@
 import { Component } from '@angular/core';
-import { HeaderComponent } from '../../shared/components/header/header.component';
-import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
 
 @Component({
   selector: 'app-support',
   standalone: true,
-  imports: [HeaderComponent, BottomNavComponent],
+  imports: [],
   template: `
-    <app-header />
     <div class="page">
       <h2 class="section-title">Support</h2>
       <div class="card">
@@ -31,7 +28,6 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
         </details>
       </div>
     </div>
-    <app-bottom-nav />
   `,
   styles: [`
     .email { color: var(--gold); font-size: 18px; margin: 16px 0; }

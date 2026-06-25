@@ -1,5 +1,6 @@
 {
   "port": "PORT",
+  "appName": "APP_NAME",
   "appUrl": "APP_URL",
   "mongodb": {
     "uri": "MONGODB_URI"
@@ -8,7 +9,8 @@
     "url": "REDIS_URL",
     "host": "REDIS_HOST",
     "port": "REDIS_PORT",
-    "password": "REDIS_PASSWORD"
+    "password": "REDIS_PASSWORD",
+    "keyPrefix": "REDIS_KEY_PREFIX"
   },
   "jwt": {
     "secret": "JWT_SECRET",
@@ -24,9 +26,42 @@
   "otp": {
     "expiryMinutes": "OTP_EXPIRY_MINUTES"
   },
+  "logging": {
+    "level": "LOG_LEVEL",
+    "format": "LOG_FORMAT",
+    "logRequestBody": "LOG_REQUEST_BODY",
+    "logQuery": "LOG_QUERY",
+    "logHeaders": "LOG_HEADERS"
+  },
+  "sms": {
+    "provider": "SMS_PROVIDER",
+    "otpMessageTemplate": "SMS_OTP_MESSAGE_TEMPLATE",
+    "twilio": {
+      "accountSid": "TWILIO_ACCOUNT_SID",
+      "authToken": "TWILIO_AUTH_TOKEN",
+      "from": "TWILIO_FROM",
+      "countryCode": "TWILIO_COUNTRY_CODE"
+    }
+  },
+  "firebase": {
+    "enabled": "FIREBASE_ENABLED",
+    "databaseURL": "FIREBASE_DATABASE_URL",
+    "serviceAccountPath": "FIREBASE_SERVICE_ACCOUNT_PATH"
+  },
   "wallet": {
     "minDeposit": "MIN_DEPOSIT",
     "minWithdraw": "MIN_WITHDRAW",
-    "referralBonus": "REFERRAL_BONUS"
-  }
+    "referralBonus": "REFERRAL_BONUS",
+    "upiId": "UPI_ID",
+    "upiQrImage": "UPI_QR_IMAGE",
+    "paymentLabel": "PAYMENT_LABEL"
+  },
+  "battle": {
+    "platformFeePercent": "BATTLE_PLATFORM_FEE_PERCENT",
+    "minEntryFee": "BATTLE_MIN_ENTRY_FEE",
+    "maxEntryFee": "BATTLE_MAX_ENTRY_FEE"
+  },
+  "currency": "CURRENCY",
+  "currencySymbol": "CURRENCY_SYMBOL",
+  "supportEmail": "SUPPORT_EMAIL"
 }

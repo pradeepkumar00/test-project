@@ -28,20 +28,34 @@ const isBetWinner = (bet, resultNumber, resultColor, resultSize) => {
 };
 
 const createRound = async (game) => {
+  const existing = await GameRound.findOne({
+    game: game._id,
+    status: { $in: ['betting', 'locked'] },
+  });
+  if (existing) return existing;
+
   const now = new Date();
   const endTime = new Date(now.getTime() + game.durationSeconds * 1000);
   const period = generatePeriod(game.slug, now);
 
-  const existing = await GameRound.findOne({ game: game._id, status: { $in: ['betting', 'locked'] } });
-  if (existing) return existing;
-
-  return GameRound.create({
-    game: game._id,
-    period,
-    status: 'betting',
-    startTime: now,
-    endTime,
-  });
+  try {
+    return await GameRound.create({
+      game: game._id,
+      period,
+      status: 'betting',
+      startTime: now,
+      endTime,
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      const active = await GameRound.findOne({
+        game: game._id,
+        status: { $in: ['betting', 'locked'] },
+      });
+      if (active) return active;
+    }
+    throw error;
+  }
 };
 
 const lockRound = async (round) => {
@@ -207,7 +221,14 @@ const runGameScheduler = async () => {
 
     if (now >= activeRound.endTime) {
       await settleRound(activeRound);
-      await createRound(game);
+
+      const stillActive = await GameRound.findOne({
+        game: game._id,
+        status: { $in: ['betting', 'locked'] },
+      });
+      if (!stillActive) {
+        await createRound(game);
+      }
     }
   }
 };

@@ -27,7 +27,7 @@ import { AuthService } from '../../core/services/auth.service';
         <input type="password" [(ngModel)]="password" placeholder="Enter password" (keyup.enter)="login()" />
       </div>
 
-      <button class="btn btn-gold btn-block" [disabled]="loading" (click)="login()">
+      <button class="btn btn-primary btn-block" [disabled]="loading" (click)="login()">
         {{ loading ? 'Logging in...' : 'Login' }}
       </button>
 
@@ -40,23 +40,36 @@ import { AuthService } from '../../core/services/auth.service';
   styles: [`
     .auth-page {
       min-height: 100vh;
-      padding: 40px 24px;
+      padding: 48px var(--page-padding);
       display: flex;
       flex-direction: column;
       justify-content: center;
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
     }
     .auth-logo {
       text-align: center;
-      margin-bottom: 32px;
+      margin-bottom: 40px;
     }
-    .auth-logo span { font-size: 48px; }
-    .auth-logo h1 { font-size: 32px; font-weight: 800; margin: 8px 0; }
-    .auth-logo p { color: var(--text-muted); }
+    .auth-logo span { font-size: 56px; }
+    .auth-logo h1 { font-size: 36px; font-weight: 800; margin: 12px 0; }
+    .auth-logo p { color: var(--text-muted); font-size: 16px; }
     .auth-link {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 24px;
       color: var(--text-muted);
-      font-size: 14px;
+      font-size: 15px;
+    }
+    @media (max-width: 768px) {
+      .auth-page {
+        padding: 32px var(--page-padding);
+        padding-top: calc(32px + env(safe-area-inset-top, 0px));
+        justify-content: flex-start;
+      }
+      .auth-logo { margin-bottom: 28px; }
+      .auth-logo span { font-size: 48px; }
+      .auth-logo h1 { font-size: 30px; }
     }
   `],
 })

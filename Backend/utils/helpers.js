@@ -1,9 +1,11 @@
 const config = require('config');
 const jwt = require('jsonwebtoken');
+const { createJwtId } = require('../services/tokenBlacklistService');
 
 const generateToken = (userId) =>
   jwt.sign({ userId }, config.get('jwt.secret'), {
     expiresIn: config.get('jwt.expiresIn'),
+    jwtid: createJwtId(),
   });
 
 const generateReferralCode = () => {
@@ -25,11 +27,12 @@ const generatePeriod = (gameSlug, startTime) => {
   const h = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
   const sec = String(date.getSeconds()).padStart(2, '0');
-  return `${gameSlug.replace(/-/g, '')}${y}${m}${d}${h}${min}${sec}`;
+  const ms = String(date.getMilliseconds()).padStart(3, '0');
+  return `${gameSlug.replace(/-/g, '')}${y}${m}${d}${h}${min}${sec}${ms}`;
 };
 
 const sanitizeUser = (user) => ({
-  id: user._id,
+  id: user._id.toString(),
   mobile: user.mobile,
   name: user.name,
   referralCode: user.referralCode,

@@ -1,5 +1,6 @@
 const config = require('config');
 const { getRedis } = require('../config/redis');
+const { sendOtpSms } = require('./smsService');
 
 const generateOtp = () => String(Math.floor(100000 + Math.random() * 900000));
 
@@ -10,10 +11,16 @@ const sendOtp = async (mobile, purpose = 'login') => {
   const otp = generateOtp();
   const expiryMinutes = config.get('otp.expiryMinutes');
   const ttlSeconds = expiryMinutes * 60;
+  const key = otpKey(mobile, purpose);
 
-  await redis.set(otpKey(mobile, purpose), otp, 'EX', ttlSeconds);
+  await redis.set(key, otp, 'EX', ttlSeconds);
 
-  console.log(`[OTP] ${mobile} -> ${otp} (${purpose}, expires in ${expiryMinutes}m)`);
+  try {
+    await sendOtpSms(mobile, otp, purpose);
+  } catch (error) {
+    await redis.del(key);
+    throw error;
+  }
 
   return { success: true, message: 'OTP sent successfully', expiresIn: ttlSeconds };
 };

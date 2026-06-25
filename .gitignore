@@ -12,6 +12,7 @@ dist/
 Backend/config/local.json
 .env
 .env.local
+Backend/config/firebase-service-account.json
 
 # Logs & OS
 *.log

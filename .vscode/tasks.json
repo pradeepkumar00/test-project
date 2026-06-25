@@ -10,14 +10,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Admin API",
-      "type": "npm",
-      "script": "dev:admin-api",
-      "path": ".",
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
       "label": "User Frontend",
       "type": "npm",
       "script": "start:frontend",
@@ -35,7 +27,7 @@
     },
     {
       "label": "Run All (BigFun)",
-      "dependsOn": ["Backend API", "Admin API", "User Frontend", "Admin Portal"],
+      "dependsOn": ["Backend API", "User Frontend", "Admin Portal"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }

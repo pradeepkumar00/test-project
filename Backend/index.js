@@ -1,22 +1,23 @@
 const config = require('config');
 const express = require('express');
 const cors = require('cors');
-const morgan = require('morgan');
 const cron = require('node-cron');
 const connectDB = require('./config/db');
 const { connectRedis } = require('./config/redis');
 const routes = require('./routes');
+const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
+const logger = require('./utils/logger');
 const { runGameScheduler } = require('./services/gameEngine');
 
 const app = express();
 const port = config.get('port');
-const isDev = process.env.NODE_ENV !== 'production';
 
+app.set('trust proxy', true);
 app.use(cors());
-app.use(morgan(isDev ? 'dev' : 'combined'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 app.use('/api', routes);
 
@@ -38,16 +39,19 @@ const start = async () => {
   await connectRedis();
 
   cron.schedule('* * * * * *', () => {
-    runGameScheduler().catch((err) => console.error('Game scheduler error:', err.message));
+    runGameScheduler().catch((err) => logger.error('Game scheduler error', { message: err.message }));
   });
 
   app.listen(port, () => {
-    console.log(`BigFun API running on http://localhost:${port}`);
-    console.log(`Health check: http://localhost:${port}/api/health`);
+    logger.info('BigFun API started', {
+      port,
+      healthCheck: `http://localhost:${port}/api/health`,
+      adminApi: `http://localhost:${port}/api/admin`,
+    });
   });
 };
 
 start().catch((err) => {
-  console.error('Failed to start server:', err.message);
+  logger.error('Failed to start server', { message: err.message, stack: err.stack });
   process.exit(1);
 });

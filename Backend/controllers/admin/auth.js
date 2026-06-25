@@ -1,6 +1,8 @@
 const { body } = require('express-validator');
+const config = require('config');
 const User = require('../../models/User');
 const { generateAdminToken } = require('../../utils/adminToken');
+const { revokeToken } = require('../../services/tokenBlacklistService');
 
 const loginValidation = [
   body('mobile').matches(/^[6-9]\d{9}$/).withMessage('Valid mobile required'),
@@ -11,22 +13,22 @@ const login = async (req, res, next) => {
   try {
     const { mobile, password } = req.body;
     const user = await User.findOne({ mobile }).select('+password');
-
+    
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
-
+    
     if (!['admin', 'superadmin'].includes(user.role)) {
       return res.status(403).json({ success: false, message: 'Not an admin account' });
     }
-
+    
     if (!user.isActive) {
       return res.status(403).json({ success: false, message: 'Account deactivated' });
     }
 
     user.lastLoginAt = new Date();
     await user.save();
-
+    
     const token = generateAdminToken(user);
 
     res.json({
@@ -57,4 +59,16 @@ const getProfile = async (req, res) => {
   });
 };
 
-module.exports = { loginValidation, login, getProfile };
+const logout = async (req, res, next) => {
+  try {
+    if (req.authToken) {
+      await revokeToken(req.authToken, 'admin', config.get('adminJwt.secret'));
+    }
+
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { loginValidation, login, getProfile, logout };

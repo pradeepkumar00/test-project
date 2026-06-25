@@ -10,7 +10,10 @@ import { DashboardStats } from '../../core/models';
   imports: [CommonModule, RouterLink],
   template: `
     <div class="page-header">
-      <h1>Dashboard</h1>
+      <div>
+        <h1>Dashboard</h1>
+        <p>Platform overview at a glance</p>
+      </div>
     </div>
 
     @if (loading) { <div class="spinner">Loading stats...</div> }
@@ -49,24 +52,57 @@ import { DashboardStats } from '../../core/models';
       <div class="quick-links">
         <h2>Quick Actions</h2>
         <div class="links">
-          <a routerLink="/deposits" class="card link-card">Review Deposits →</a>
-          <a routerLink="/withdrawals" class="card link-card">Review Withdrawals →</a>
-          <a routerLink="/battles" class="card link-card">Manage Battles →</a>
-          <a routerLink="/kyc" class="card link-card">Pending KYC →</a>
+          <a routerLink="/deposits" class="card link-card">
+            <span class="link-icon">💰</span>
+            <span>Review Deposits</span>
+            <span class="arrow">→</span>
+          </a>
+          <a routerLink="/withdrawals" class="card link-card">
+            <span class="link-icon">🏦</span>
+            <span>Review Withdrawals</span>
+            <span class="arrow">→</span>
+          </a>
+          <a routerLink="/battles" class="card link-card">
+            <span class="link-icon">⚔️</span>
+            <span>Manage Battles</span>
+            <span class="arrow">→</span>
+          </a>
+          <a routerLink="/kyc" class="card link-card">
+            <span class="link-icon">🪪</span>
+            <span>Pending KYC</span>
+            <span class="arrow">→</span>
+          </a>
         </div>
       </div>
     }
   `,
   styles: [`
-    .quick-links h2 { font-size: 16px; margin-bottom: 12px; color: var(--text-muted); }
-    .links { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-    .link-card {
-      display: block;
-      color: var(--gold);
-      font-weight: 600;
-      transition: border-color 0.15s;
+    .quick-links h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
     }
-    .link-card:hover { border-color: var(--gold); }
+    .links {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 14px;
+    }
+    .link-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text);
+      font-weight: 600;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .link-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+    .link-icon { font-size: 22px; }
+    .link-card span:nth-child(2) { flex: 1; font-size: 14px; }
+    .arrow { color: var(--primary-light); font-size: 18px; }
   `],
 })
 export class DashboardComponent implements OnInit {

@@ -55,15 +55,33 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `,
   styles: [`
-    .auth-page { min-height: 100vh; padding: 32px 24px; }
-    .auth-logo {
-      text-align: center; margin-bottom: 24px;
-      span { font-size: 40px; }
-      h1 { font-size: 28px; margin: 8px 0; }
+    .auth-page {
+      min-height: 100vh;
+      padding: 40px var(--page-padding);
+      max-width: 480px;
+      margin: 0 auto;
+      width: 100%;
     }
-    .refer-bonus { color: var(--gold); font-size: 14px; }
-    .otp-row { display: flex; gap: 8px; input { flex: 1; } button { white-space: nowrap; } }
-    .auth-link { text-align: center; margin-top: 20px; color: var(--text-muted); font-size: 14px; }
+    .auth-logo {
+      text-align: center; margin-bottom: 28px;
+      span { font-size: 52px; }
+      h1 { font-size: 32px; margin: 10px 0; font-weight: 800; }
+    }
+    .refer-bonus { color: var(--gold); font-size: 15px; }
+    .otp-row { display: flex; gap: 10px; input { flex: 1; } button { white-space: nowrap; } }
+    .auth-link { text-align: center; margin-top: 24px; color: var(--text-muted); font-size: 15px; }
+    @media (max-width: 768px) {
+      .auth-page {
+        padding: 24px var(--page-padding);
+        padding-top: calc(24px + env(safe-area-inset-top, 0px));
+      }
+      .auth-logo span { font-size: 44px; }
+      .auth-logo h1 { font-size: 28px; }
+      .otp-row {
+        flex-direction: column;
+        button { width: 100%; }
+      }
+    }
   `],
 })
 export class RegisterComponent implements OnInit {

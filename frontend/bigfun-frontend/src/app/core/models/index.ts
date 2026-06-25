@@ -13,6 +13,13 @@ export interface User {
   kycVerified?: boolean;
   referralCount: number;
   referralEarnings: number;
+  bankDetails?: {
+    accountHolder?: string;
+    accountNumber?: string;
+    ifsc?: string;
+    upiId?: string;
+    bankName?: string;
+  };
 }
 
 export interface Battle {
@@ -49,4 +56,14 @@ export interface PaymentDetails {
   upiQrImage: string;
   minDeposit: number;
   instructions: string;
+}
+
+export interface DepositQr {
+  orderId: string;
+  amount: number;
+  upiId: string;
+  payeeName: string;
+  qrDataUrl: string;
+  upiUri: string;
+  expiresInMinutes: number;
 }

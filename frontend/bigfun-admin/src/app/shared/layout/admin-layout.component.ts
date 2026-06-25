@@ -11,7 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
     <div class="layout">
       <aside class="sidebar">
         <div class="brand">
-          <span>⚙️</span>
+          <span class="brand-mark">B</span>
           <div>
             <strong>BIGFUN</strong>
             <small>Admin Portal</small>
@@ -52,39 +52,56 @@ import { AuthService } from '../../core/services/auth.service';
       top: 0;
       left: 0;
       bottom: 0;
+      z-index: 100;
     }
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 20px 16px;
+      gap: 12px;
+      padding: 22px 18px;
       border-bottom: 1px solid var(--border);
     }
-    .brand span { font-size: 24px; }
-    .brand strong { display: block; font-size: 16px; }
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--gradient-hero);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .brand strong { display: block; font-size: 17px; letter-spacing: 0.04em; }
     .brand small { color: var(--text-muted); font-size: 11px; }
     nav {
       flex: 1;
-      padding: 12px 8px;
+      padding: 12px 10px;
       display: flex;
       flex-direction: column;
       gap: 4px;
+      overflow-y: auto;
     }
     nav a {
-      padding: 10px 12px;
-      border-radius: 8px;
+      padding: 12px 14px;
+      border-radius: var(--radius-sm);
       color: var(--text-muted);
       font-size: 14px;
-      font-weight: 500;
-      transition: background 0.15s;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
     }
-    nav a:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+    nav a:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+    }
     nav a.active {
-      background: rgba(245, 197, 24, 0.12);
-      color: var(--gold);
+      background: rgba(124, 58, 237, 0.2);
+      color: var(--primary-light);
     }
     .sidebar-footer {
-      padding: 16px;
+      padding: 16px 14px;
       border-top: 1px solid var(--border);
     }
     .admin-info {
@@ -96,15 +113,15 @@ import { AuthService } from '../../core/services/auth.service';
     .content {
       flex: 1;
       margin-left: var(--sidebar-width);
-      padding: 24px;
+      padding: 28px;
       min-height: 100vh;
     }
     @media (max-width: 768px) {
-      .sidebar { width: 64px; }
-      .sidebar .brand div, .sidebar nav a, .admin-info, .brand small { display: none; }
+      .sidebar { width: 72px; }
+      .sidebar .brand div, .admin-info, .brand small { display: none; }
       .brand { justify-content: center; padding: 16px 8px; }
-      nav a { text-align: center; font-size: 18px; }
-      .content { margin-left: 64px; padding: 16px; }
+      nav a { text-align: center; font-size: 18px; padding: 12px 8px; }
+      .content { margin-left: 72px; padding: 16px; }
     }
   `],
 })
@@ -124,7 +141,6 @@ export class AdminLayoutComponent {
   ];
 
   logout() {
-    this.auth.logout();
-    this.router.navigate(['/login']);
+    this.auth.logout().subscribe(() => this.router.navigate(['/login']));
   }
 }

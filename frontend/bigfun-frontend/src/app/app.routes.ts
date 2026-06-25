@@ -14,29 +14,36 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
-    path: 'home',
-    loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
+    path: '',
+    loadComponent: () =>
+      import('./shared/layout/user-layout.component').then((m) => m.UserLayoutComponent),
     canActivate: [authGuard],
-  },
-  {
-    path: 'wallet',
-    loadComponent: () => import('./pages/wallet/wallet.component').then((m) => m.WalletComponent),
-    canActivate: [authGuard],
-  },
-  {
-    path: 'profile',
-    loadComponent: () => import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
-    canActivate: [authGuard],
-  },
-  {
-    path: 'refer',
-    loadComponent: () => import('./pages/refer/refer.component').then((m) => m.ReferComponent),
-    canActivate: [authGuard],
-  },
-  {
-    path: 'support',
-    loadComponent: () => import('./pages/support/support.component').then((m) => m.SupportComponent),
-    canActivate: [authGuard],
+    children: [
+      {
+        path: 'home',
+        loadComponent: () => import('./pages/home/home.component').then((m) => m.HomeComponent),
+      },
+      {
+        path: 'battles/:gameSlug',
+        loadComponent: () => import('./pages/battles/battles.component').then((m) => m.BattlesComponent),
+      },
+      {
+        path: 'wallet',
+        loadComponent: () => import('./pages/wallet/wallet.component').then((m) => m.WalletComponent),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
+      },
+      {
+        path: 'refer',
+        loadComponent: () => import('./pages/refer/refer.component').then((m) => m.ReferComponent),
+      },
+      {
+        path: 'support',
+        loadComponent: () => import('./pages/support/support.component').then((m) => m.SupportComponent),
+      },
+    ],
   },
   { path: '**', redirectTo: 'home' },
 ];

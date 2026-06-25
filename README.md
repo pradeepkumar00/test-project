@@ -10,15 +10,16 @@ This repository is a **monorepo** containing the backend APIs and both Angular f
 
 ```
 .
-├── Backend/                    # Node.js API (user + admin server)
-│   ├── admin-server/           # Admin REST API (port 5050)
+├── Backend/                    # Node.js API (user + admin routes)
 │   ├── config/                 # App config (default, local, env mapping)
 │   ├── controllers/
+│   │   └── admin/              # Admin-only controllers
 │   ├── models/
 │   ├── routes/
+│   │   └── admin/              # Admin routes (mounted at /api/admin)
 │   ├── services/
 │   ├── scripts/seed.js         # Demo data seeder
-│   └── index.js                # User API entry (port 5000)
+│   └── index.js                # API entry (port 5000)
 ├── frontend/
 │   ├── bigfun-frontend/        # User Angular app (port 5200)
 │   └── bigfun-admin/           # Admin Angular portal (port 5201)
@@ -33,7 +34,7 @@ This repository is a **monorepo** containing the backend APIs and both Angular f
 | Layer | Technology |
 |-------|------------|
 | User API | Node.js, Express 5, MongoDB, Redis, JWT |
-| Admin API | Separate Express app on port 5050 |
+| Admin API | Same server at `/api/admin` with separate admin JWT guard |
 | User UI | Angular 19 (standalone components) |
 | Admin UI | Angular 19 |
 | Config | `config` package + `Backend/config/local.json` |
@@ -94,8 +95,7 @@ npm run dev:all
 **Option B — separate terminals:**
 
 ```bash
-npm run dev:api          # User API → http://localhost:5000
-npm run dev:admin-api    # Admin API → http://localhost:5050
+npm run dev:api          # API (user + admin) → http://localhost:5000
 npm run start:frontend   # User app → http://localhost:5200
 npm run start:admin      # Admin portal → http://localhost:5201
 ```
@@ -106,27 +106,27 @@ npm run start:admin      # Admin portal → http://localhost:5201
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| User API | http://localhost:5000/api | Auth, wallet, battles, games |
-| Admin API | http://localhost:5050/api | Deposits, withdrawals, users, KYC |
+| API | http://localhost:5000/api | User routes: auth, wallet, battles, games |
+| Admin API | http://localhost:5000/api/admin | Deposits, withdrawals, users, KYC |
 | User App | http://localhost:5200 | Player-facing mobile UI |
 | Admin Portal | http://localhost:5201 | Operations dashboard |
 
 Health checks:
-- User API: `GET http://localhost:5000/api/health`
-- Admin API: `GET http://localhost:5050/api/health`
+- API: `GET http://localhost:5000/api/health`
+- Admin API: `GET http://localhost:5000/api/admin/health`
 
 ---
 
-## Demo Credentials
+## Local dev credentials (after `npm run seed`)
+
+> **Do not use these in production.** Change passwords and onboard real admins with `npm run onboard:superadmin`. Never display admin credentials in the UI.
 
 | Role | Mobile | Password |
 |------|--------|----------|
 | Demo player | `9876543210` | `demo123` |
 | Second player | `9123456781` | `demo123` |
-| Super admin | `9999999999` | `admin123` |
 
-Referral code for demo user: `816319`  
-Register link: `http://localhost:5200/register?refer=816319`
+`npm run seed` also creates a default superadmin — use `onboard:superadmin` to set your own admin account instead.
 
 ---
 
@@ -135,12 +135,12 @@ Register link: `http://localhost:5200/register?refer=816319`
 | Command | Description |
 |---------|-------------|
 | `npm install` | Install all workspace dependencies |
-| `npm run dev:all` | Start API, admin API, both frontends |
-| `npm run dev:api` | User API with file watch |
-| `npm run dev:admin-api` | Admin API with file watch |
+| `npm run dev:all` | Start API and both frontends |
+| `npm run dev:api` | API with file watch (user + admin routes) |
 | `npm run start:frontend` | User Angular dev server |
 | `npm run start:admin` | Admin Angular dev server |
 | `npm run seed` | Seed MongoDB with demo data |
+| `npm run onboard:superadmin` | Create or promote a superadmin account |
 | `npm run build` | Production build for both frontends |
 
 ---
@@ -168,6 +168,7 @@ Register link: `http://localhost:5200/register?refer=816319`
 
 - JWT auth for users and admins (separate secrets)
 - Redis-backed OTP with `bigfun:` key prefix
+- SMS OTP via Twilio (configurable; console fallback for local dev)
 - Wallet with admin approval flow for deposits
 - Battle engine with platform fee (2.5%)
 - Color game scheduler via cron
@@ -176,14 +177,107 @@ Register link: `http://localhost:5200/register?refer=816319`
 
 ## Configuration
 
-| File | Purpose |
-|------|---------|
-| `Backend/config/default.json` | Default settings (ports, limits, game types) |
-| `Backend/config/local.json` | Local secrets (**gitignored**) |
-| `Backend/config/local.example.json` | Template for local config |
-| `Backend/config/custom-environment-variables.json` | Env var overrides for production |
+The backend uses the [`config`](https://github.com/node-config/node-config) package with **two JSON layers**:
 
-Production env vars: `PORT`, `ADMIN_PORT`, `MONGODB_URI`, `REDIS_URL`, `REDIS_PASSWORD`, `JWT_SECRET`, `ADMIN_JWT_SECRET`
+| File | Committed | Purpose |
+|------|-----------|---------|
+| `default.json` | Yes | Shipped defaults — do not put secrets here |
+| `local.json` | **No (gitignored)** | **Single override file** — overrides anything from `default.json` |
+| `local.example.json` | Yes | Full template — copy this to create `local.json` |
+| `custom-environment-variables.json` | Yes | Production env var mapping (when not using `local.json`) |
+
+### Setup (one file for all local overrides)
+
+```bash
+cp Backend/config/local.example.json Backend/config/local.json
+```
+
+Edit `Backend/config/local.json` to change **any** setting — ports, OTP expiry, Redis, JWT, Twilio, wallet, battles, etc. You only need to change the keys you care about; unset keys fall back to `default.json`.
+
+**Examples in `local.json`:**
+
+```json
+{
+  "otp": { "expiryMinutes": 10 },
+  "port": 5000,
+  "jwt": { "secret": "your-secret" },
+  "adminJwt": { "secret": "your-admin-secret" }
+}
+```
+
+### Config files summary
+
+```
+Backend/config/
+├── default.json                      ← base defaults (committed)
+├── local.json                        ← YOUR overrides (gitignored, copy from example)
+├── local.example.json                ← full template with every key
+└── custom-environment-variables.json ← env vars for production deploys
+```
+
+### SMS / Twilio (OTP)
+
+OTP delivery is handled by `Backend/services/smsService.js`. The provider is config-driven:
+
+| `sms.provider` | Behavior |
+|----------------|----------|
+| `console` | Logs OTP to server console (default for local dev) |
+| `twilio` | Sends OTP via Twilio SMS API |
+
+**Enable Twilio in `Backend/config/local.json`:**
+
+```json
+{
+  "sms": {
+    "provider": "twilio",
+    "twilio": {
+      "accountSid": "ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "authToken": "your-twilio-auth-token",
+      "from": "+1234567890",
+      "countryCode": "+91"
+    }
+  }
+}
+```
+
+Or set environment variables (see `.env.example`):
+
+```bash
+SMS_PROVIDER=twilio
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=your-token
+TWILIO_FROM=+1234567890
+TWILIO_COUNTRY_CODE=+91
+```
+
+**OTP message template** (optional, in `default.json` or override in local config):
+
+```
+Your {appName} OTP for {purpose} is {otp}. Valid for {expiryMinutes} minutes. Do not share this code.
+```
+
+Placeholders: `{appName}`, `{otp}`, `{purpose}`, `{expiryMinutes}`
+
+### Request logging
+
+HTTP requests are logged via `middleware/requestLogger.js` with IP, method, path, status, duration, user/admin identity, query, and body (sensitive fields redacted).
+
+Configure in `Backend/config/local.json`:
+
+```json
+{
+  "logging": {
+    "level": "info",
+    "format": "pretty",
+    "logRequestBody": true,
+    "logQuery": true,
+    "logHeaders": false,
+    "skipPaths": ["/api/health", "/api/admin/health"]
+  }
+}
+```
+
+Production env vars: `LOG_LEVEL`, `LOG_FORMAT=json`, `LOG_HEADERS=true`
 
 ---
 
@@ -193,31 +287,31 @@ Production env vars: `PORT`, `ADMIN_PORT`, `MONGODB_URI`, `REDIS_URL`, `REDIS_PA
 
 | Area | Endpoints |
 |------|-----------|
-| Auth | `/auth/send-otp`, `/auth/register`, `/auth/login`, `/auth/profile` |
+| Auth | `/auth/send-otp`, `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/profile` |
 | Wallet | `/wallet/balance`, `/wallet/deposit`, `/wallet/withdraw`, `/wallet/transactions` |
 | Battles | `/battles/create`, `/battles/join`, `/battles/open`, `/battles/running` |
 | Games | `/games/*` (color prediction) |
 | Home | `/home` |
 
-### Admin API (`/api`)
+### Admin API (`/api/admin`)
 
 | Area | Endpoints |
 |------|-----------|
-| Auth | `/auth/login`, `/auth/profile` |
-| Dashboard | `/dashboard` |
-| Deposits | `/deposits`, `/deposits/:id/approve`, `/deposits/:id/reject` |
-| Withdrawals | `/withdrawals`, `/withdrawals/:id/approve`, `/withdrawals/:id/reject` |
-| Battles | `/battles`, `/battles/:id/cancel`, `/battles/:id/complete` |
-| Users | `/users`, `/users/:id/status`, `/users/:id/balance` (superadmin) |
-| KYC | `/kyc/pending`, `/kyc/:userId/approve`, `/kyc/:userId/reject` |
-| Transactions | `/transactions` |
+| Auth | `/api/admin/auth/login`, `/api/admin/auth/logout`, `/api/admin/auth/profile` |
+| Dashboard | `/api/admin/dashboard` |
+| Deposits | `/api/admin/deposits`, `/api/admin/deposits/:id/approve`, `/api/admin/deposits/:id/reject` |
+| Withdrawals | `/api/admin/withdrawals`, `/api/admin/withdrawals/:id/approve`, `/api/admin/withdrawals/:id/reject` |
+| Battles | `/api/admin/battles`, `/api/admin/battles/:id/cancel`, `/api/admin/battles/:id/complete` |
+| Users | `/api/admin/users`, `/api/admin/users/:id/status`, `/api/admin/users/:id/balance` (superadmin) |
+| KYC | `/api/admin/kyc/pending`, `/api/admin/kyc/:userId/approve`, `/api/admin/kyc/:userId/reject` |
+| Transactions | `/api/admin/transactions` |
 
 ---
 
 ## Development Notes
 
 - User frontend proxies `/api` → `http://localhost:5000` (`frontend/bigfun-frontend/proxy.conf.json`)
-- Admin portal proxies `/api` → `http://localhost:5050` (`frontend/bigfun-admin/proxy.conf.json`)
+- Admin portal proxies `/api` → `http://localhost:5000`; admin app calls `/api/admin/*` (`frontend/bigfun-admin/proxy.conf.json`)
 - VS Code: use **Run All (BigFun)** task from `.vscode/tasks.json`
 - Each package can also be run independently from its own folder
 

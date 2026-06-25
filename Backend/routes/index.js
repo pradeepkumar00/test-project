@@ -7,6 +7,7 @@ const referralRoutes = require('./referral');
 const battlesRoutes = require('./battles');
 const homeRoutes = require('./home');
 const profileRoutes = require('./profile');
+const adminRoutes = require('./admin');
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use('/referral', referralRoutes);
 router.use('/battles', battlesRoutes);
 router.use('/home', homeRoutes);
 router.use('/profile', profileRoutes);
+router.use('/admin', adminRoutes);
 
 module.exports = router;

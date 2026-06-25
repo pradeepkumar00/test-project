@@ -3,6 +3,8 @@ const User = require('../models/User');
 const config = require('config');
 const { sendOtp, verifyOtp } = require('../services/otpService');
 const { recordTransaction } = require('../services/paymentService');
+const { createCustomToken, isEnabled: isFirebaseEnabled } = require('../services/firebaseService');
+const { revokeToken } = require('../services/tokenBlacklistService');
 const { generateToken, generateReferralCode, sanitizeUser } = require('../utils/helpers');
 
 const sendOtpValidation = [
@@ -169,12 +171,48 @@ const getProfile = async (req, res) => {
   res.json({ success: true, user: sanitizeUser(req.user) });
 };
 
+const getFirebaseToken = async (req, res, next) => {
+  try {
+    if (!isFirebaseEnabled()) {
+      return res.status(503).json({ success: false, message: 'Firebase wallet sync is not enabled' });
+    }
+
+    const firebaseToken = await createCustomToken(req.user._id.toString());
+    res.json({ success: true, firebaseToken });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logout = async (req, res, next) => {
+  try {
+    if (req.authToken) {
+      await revokeToken(req.authToken, 'user', config.get('jwt.secret'));
+    }
+
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateProfile = async (req, res, next) => {
   try {
-    const { name } = req.body;
-    if (name !== undefined) req.user.name = name;
+    const { name, upiId, accountHolder, accountNumber, ifsc, bankName } = req.body;
+
+    if (name !== undefined) req.user.name = String(name).trim();
+    if (upiId !== undefined || accountHolder !== undefined || accountNumber !== undefined || ifsc !== undefined || bankName !== undefined) {
+      req.user.bankDetails = {
+        accountHolder: accountHolder ?? req.user.bankDetails?.accountHolder ?? '',
+        accountNumber: accountNumber ?? req.user.bankDetails?.accountNumber ?? '',
+        ifsc: ifsc ?? req.user.bankDetails?.ifsc ?? '',
+        upiId: upiId ?? req.user.bankDetails?.upiId ?? '',
+        bankName: bankName ?? req.user.bankDetails?.bankName ?? '',
+      };
+    }
+
     await req.user.save();
-    res.json({ success: true, message: 'Profile updated', user: sanitizeUser(req.user) });
+    res.json({ success: true, message: 'Profile updated successfully', user: sanitizeUser(req.user) });
   } catch (error) {
     next(error);
   }
@@ -192,7 +230,11 @@ const changePassword = async (req, res, next) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({ success: true, message: 'Password changed successfully' });
+    if (req.authToken) {
+      await revokeToken(req.authToken, 'user', config.get('jwt.secret'));
+    }
+
+    res.json({ success: true, message: 'Password changed successfully. Please log in again.' });
   } catch (error) {
     next(error);
   }
@@ -253,6 +295,8 @@ module.exports = {
   login,
   loginWithOtp,
   getProfile,
+  getFirebaseToken,
+  logout,
   updateProfile,
   changePassword,
   resetPassword,

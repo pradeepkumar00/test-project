@@ -1,6 +1,7 @@
 const config = require('config');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { isTokenRevoked } = require('../services/tokenBlacklistService');
 
 const auth = async (req, res, next) => {
   try {
@@ -11,6 +12,11 @@ const auth = async (req, res, next) => {
 
     const token = header.split(' ')[1];
     const decoded = jwt.verify(token, config.get('jwt.secret'));
+
+    if (await isTokenRevoked(decoded, token, 'user')) {
+      return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
+    }
+
     const user = await User.findById(decoded.userId);
 
     if (!user || !user.isActive) {
@@ -18,6 +24,7 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
+    req.authToken = token;
     next();
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Invalid or expired token' });

@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://admin-api.bigfun.in/api',
+  apiUrl: 'https://api.bigfun.in/api/admin',
 };

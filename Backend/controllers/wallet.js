@@ -4,13 +4,24 @@ const Transaction = require('../models/Transaction');
 const Deposit = require('../models/Deposit');
 const Withdraw = require('../models/Withdraw');
 const User = require('../models/User');
+const { getRedis } = require('../config/redis');
+const { createDepositQr } = require('../services/upiQrService');
 const { submitDepositRequest, completeDeposit, recordTransaction } = require('../services/paymentService');
+const { publishWalletUpdate } = require('../services/firebaseService');
+const { generateOrderId } = require('../utils/helpers');
+
+const depositQrValidation = [
+  body('amount')
+    .isFloat({ min: config.get('wallet.minDeposit') })
+    .withMessage(`Minimum deposit is ₹${config.get('wallet.minDeposit')}`),
+];
 
 const depositSubmitValidation = [
   body('amount')
     .isFloat({ min: config.get('wallet.minDeposit') })
     .withMessage(`Minimum deposit is ₹${config.get('wallet.minDeposit')}`),
-  body('utrNumber').notEmpty().trim().withMessage('UTR number is required'),
+  body('utrNumber').notEmpty().trim().withMessage('UTR / Transaction ID is required'),
+  body('orderId').optional().isString().trim(),
   body('paymentMethod').optional().isIn(config.get('paymentMethods')),
 ];
 
@@ -43,14 +54,72 @@ const getPaymentDetails = async (req, res) => {
       upiId: config.get('wallet.upiId'),
       upiQrImage: config.get('wallet.upiQrImage'),
       minDeposit: config.get('wallet.minDeposit'),
-      instructions: 'Pay via UPI, then enter amount and UTR number below to submit for admin approval.',
+      instructions: 'Enter amount and tap Add to generate a QR code. Pay the exact amount, then submit your transaction ID for admin approval.',
     },
   });
 };
 
+const verifyDepositIntent = async (orderId, userId, amount) => {
+  const redis = getRedis();
+  const raw = await redis.get(`deposit:intent:${orderId}`);
+  if (!raw) {
+    throw new Error('Deposit session expired. Please generate a new QR code.');
+  }
+
+  const intent = JSON.parse(raw);
+  if (intent.userId !== userId.toString()) {
+    throw new Error('Invalid deposit session');
+  }
+  if (Math.abs(parseFloat(intent.amount) - parseFloat(amount)) > 0.01) {
+    throw new Error('Amount does not match the generated QR code');
+  }
+
+  return intent;
+};
+
+const generateDepositQr = async (req, res) => {
+  try {
+    const amount = parseFloat(req.body.amount);
+    const orderId = generateOrderId();
+    const qr = await createDepositQr({ amount, orderId });
+    const expiryMinutes = config.get('wallet.depositQrExpiryMinutes') || 30;
+
+    const redis = getRedis();
+    await redis.setex(
+      `deposit:intent:${orderId}`,
+      expiryMinutes * 60,
+      JSON.stringify({
+        userId: req.user._id.toString(),
+        amount,
+        createdAt: Date.now(),
+      })
+    );
+
+    res.json({
+      success: true,
+      depositQr: {
+        orderId,
+        amount,
+        upiId: qr.upiId,
+        payeeName: qr.payeeName,
+        qrDataUrl: qr.qrDataUrl,
+        upiUri: qr.upiUri,
+        expiresInMinutes: expiryMinutes,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 const submitDeposit = async (req, res, next) => {
   try {
-    const { amount, utrNumber, paymentMethod = 'UPI' } = req.body;
+    const { amount, utrNumber, paymentMethod = 'UPI', orderId } = req.body;
+    const parsedAmount = parseFloat(amount);
+
+    if (orderId) {
+      await verifyDepositIntent(orderId, req.user._id, parsedAmount);
+    }
 
     const pendingCount = await Deposit.countDocuments({
       user: req.user._id,
@@ -66,10 +135,16 @@ const submitDeposit = async (req, res, next) => {
 
     const deposit = await submitDepositRequest({
       userId: req.user._id,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       utrNumber: utrNumber.trim(),
       paymentMethod,
+      orderId: orderId || null,
     });
+
+    if (orderId) {
+      const redis = getRedis();
+      await redis.del(`deposit:intent:${orderId}`);
+    }
 
     res.status(201).json({
       success: true,
@@ -137,6 +212,8 @@ const requestWithdraw = async (req, res, next) => {
       referenceId: withdraw._id.toString(),
       description: `Withdrawal request via ${method}`,
     });
+
+    await publishWalletUpdate(user, 'withdrawal_requested', { withdrawId: withdraw._id.toString() });
 
     res.status(201).json({
       success: true,
@@ -218,10 +295,12 @@ const updateBankDetails = async (req, res, next) => {
 };
 
 module.exports = {
+  depositQrValidation,
   depositSubmitValidation,
   withdrawValidation,
   getBalance,
   getPaymentDetails,
+  generateDepositQr,
   submitDeposit,
   requestWithdraw,
   getTransactions,

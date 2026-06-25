@@ -1,27 +1,27 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User } from '../../../core/models';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   template: `
     <header class="header">
-      <div class="logo">
-        <span class="logo-icon">🎮</span>
+      <a routerLink="/home" class="logo">
+        <span class="logo-mark">B</span>
         <span class="logo-text">BIGFUN</span>
-      </div>
+      </a>
       @if (auth.getUser(); as user) {
         <div class="stats">
-          <div class="stat-pill">
-            <span class="label">Wallet</span>
-            <span class="value">₹ {{ walletBalance | number:'1.2-2' }}</span>
-          </div>
-          <div class="stat-pill">
-            <span class="label">Income</span>
-            <span class="value">₹ {{ income | number:'1.0-0' }}</span>
+          <div class="stat-chip wallet">
+            <span class="icon">💰</span>
+            <div>
+              <small>Wallet</small>
+              <strong>₹{{ walletBalance | number:'1.0-2' }}</strong>
+            </div>
           </div>
         </div>
       }
@@ -32,8 +32,9 @@ import { User } from '../../../core/models';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 16px;
-      background: var(--bg);
+      padding: 16px var(--page-padding);
+      background: rgba(12, 18, 34, 0.85);
+      backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
@@ -42,34 +43,47 @@ import { User } from '../../../core/models';
     .logo {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
     }
-    .logo-icon { font-size: 22px; }
-    .logo-text {
-      font-size: 18px;
-      font-weight: 800;
-      letter-spacing: 1px;
-    }
-    .stats {
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--gradient-hero);
       display: flex;
-      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      color: #fff;
     }
-    .stat-pill {
+    .logo-text {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+    .stat-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
       background: var(--bg-card);
-      border: 1px solid var(--gold);
-      border-radius: 20px;
-      padding: 4px 10px;
-      text-align: center;
-      min-width: 70px;
+      border: 1px solid var(--border);
     }
-    .label {
+    .stat-chip .icon { font-size: 20px; }
+    .stat-chip small {
       display: block;
-      font-size: 9px;
+      font-size: 10px;
       color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
     }
-    .value {
-      font-size: 12px;
-      font-weight: 700;
+    .stat-chip strong {
+      font-size: 15px;
+      font-weight: 800;
       color: var(--gold);
     }
   `],
@@ -77,13 +91,11 @@ import { User } from '../../../core/models';
 export class HeaderComponent implements OnInit {
   auth = inject(AuthService);
   walletBalance = 0;
-  income = 0;
 
   ngOnInit() {
     this.auth.user$.subscribe((u: User | null) => {
       if (u) {
         this.walletBalance = u.totalBalance ?? u.balance + (u.bonusBalance || 0);
-        this.income = u.income ?? 0;
       }
     });
   }

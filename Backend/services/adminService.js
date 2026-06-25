@@ -2,6 +2,7 @@ const Battle = require('../models/Battle');
 const User = require('../models/User');
 const Withdraw = require('../models/Withdraw');
 const { recordTransaction } = require('./paymentService');
+const { publishWalletUpdate } = require('./firebaseService');
 const { formatBattle } = require('./battleService');
 
 const refundUser = async (userId, amount, battleId, reason) => {
@@ -22,6 +23,8 @@ const refundUser = async (userId, amount, battleId, reason) => {
     description: reason,
     metadata: { battleId, action: 'admin_refund' },
   });
+
+  await publishWalletUpdate(user, 'battle_refund');
 };
 
 const cancelBattle = async (battleId, reason = 'Cancelled by admin') => {
@@ -115,6 +118,8 @@ const rejectWithdrawal = async (withdrawId, reason, adminId) => {
     { referenceId: withdraw._id.toString(), type: 'withdraw' },
     { status: 'cancelled' }
   );
+
+  await publishWalletUpdate(user, 'withdrawal_rejected', { withdrawId: withdraw._id.toString() });
 
   return { withdraw, user };
 };

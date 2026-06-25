@@ -1,15 +1,12 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HeaderComponent } from '../../shared/components/header/header.component';
-import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-nav.component';
 import { ReferralService } from '../../core/services/wallet.service';
 
 @Component({
   selector: 'app-refer',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, BottomNavComponent],
+  imports: [CommonModule],
   template: `
-    <app-header />
     <div class="page">
       <h2 class="section-title">Refer & Earn</h2>
       @if (referral) {
@@ -37,7 +34,6 @@ import { ReferralService } from '../../core/services/wallet.service';
       }
       @if (!referredUsers.length) { <p class="empty">No referrals yet</p> }
     </div>
-    <app-bottom-nav />
   `,
   styles: [`
     .refer-card { text-align: center; }

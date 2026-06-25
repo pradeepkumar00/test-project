@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { User } from '../models';
 
@@ -64,10 +65,34 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('bigfun_token');
-    localStorage.removeItem('bigfun_user');
-    this.userSubject.next(null);
+  updateProfile(data: {
+    name?: string;
+    upiId?: string;
+    accountHolder?: string;
+    accountNumber?: string;
+    ifsc?: string;
+    bankName?: string;
+  }) {
+    return this.http.put<{ success: boolean; message: string; user: User }>(`${environment.apiUrl}/auth/profile`, data).pipe(
+      tap((res) => {
+        this.userSubject.next(res.user);
+        localStorage.setItem('bigfun_user', JSON.stringify(res.user));
+      })
+    );
+  }
+
+  logout(): Observable<{ success: boolean; message: string }> {
+    if (!this.isLoggedIn()) {
+      this.clearSession();
+      return of({ success: true, message: 'Logged out' });
+    }
+
+    return this.http
+      .post<{ success: boolean; message: string }>(`${environment.apiUrl}/auth/logout`, {})
+      .pipe(
+        catchError(() => of({ success: true, message: 'Logged out locally' })),
+        tap(() => this.clearSession())
+      );
   }
 
   updateUser(user: User): void {
@@ -75,9 +100,35 @@ export class AuthService {
     localStorage.setItem('bigfun_user', JSON.stringify(user));
   }
 
+  updateWalletBalances(data: {
+    balance: number;
+    bonusBalance: number;
+    totalBalance: number;
+    income?: number;
+  }): void {
+    const user = this.getUser();
+    if (!user) {
+      return;
+    }
+
+    this.updateUser({
+      ...user,
+      balance: data.balance,
+      bonusBalance: data.bonusBalance,
+      totalBalance: data.totalBalance,
+      income: data.income ?? user.income,
+    });
+  }
+
   private setSession(token: string, user: User): void {
     localStorage.setItem('bigfun_token', token);
     localStorage.setItem('bigfun_user', JSON.stringify(user));
     this.userSubject.next(user);
+  }
+
+  private clearSession(): void {
+    localStorage.removeItem('bigfun_token');
+    localStorage.removeItem('bigfun_user');
+    this.userSubject.next(null);
   }
 }

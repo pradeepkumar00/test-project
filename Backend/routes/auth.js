@@ -23,7 +23,22 @@ router.post(
 router.get('/referral/:code', authController.validateReferral);
 
 router.get('/profile', auth, authController.getProfile);
-router.put('/profile', auth, authController.updateProfile);
+router.post('/logout', auth, authController.logout);
+router.get('/firebase-token', auth, authController.getFirebaseToken);
+router.put(
+  '/profile',
+  auth,
+  [
+    body('name').optional().trim().isLength({ max: 80 }).withMessage('Name is too long'),
+    body('upiId').optional().trim(),
+    body('accountHolder').optional().trim(),
+    body('accountNumber').optional().trim(),
+    body('ifsc').optional().trim(),
+    body('bankName').optional().trim(),
+  ],
+  validate,
+  authController.updateProfile
+);
 router.put(
   '/change-password',
   auth,

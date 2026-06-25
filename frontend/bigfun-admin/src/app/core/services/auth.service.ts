@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Admin } from '../models';
 
@@ -49,15 +50,29 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('bigfun_admin_token');
-    localStorage.removeItem('bigfun_admin');
-    this.adminSubject.next(null);
+  logout(): Observable<{ success: boolean; message: string }> {
+    if (!this.isLoggedIn()) {
+      this.clearSession();
+      return of({ success: true, message: 'Logged out' });
+    }
+
+    return this.http
+      .post<{ success: boolean; message: string }>(`${environment.apiUrl}/auth/logout`, {})
+      .pipe(
+        catchError(() => of({ success: true, message: 'Logged out locally' })),
+        tap(() => this.clearSession())
+      );
   }
 
   private setSession(token: string, admin: Admin): void {
     localStorage.setItem('bigfun_admin_token', token);
     localStorage.setItem('bigfun_admin', JSON.stringify(admin));
     this.adminSubject.next(admin);
+  }
+
+  private clearSession(): void {
+    localStorage.removeItem('bigfun_admin_token');
+    localStorage.removeItem('bigfun_admin');
+    this.adminSubject.next(null);
   }
 }

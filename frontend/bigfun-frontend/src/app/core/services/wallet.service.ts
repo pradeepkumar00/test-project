@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { PaymentDetails } from '../models';
+import { PaymentDetails, DepositQr } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class WalletService {
@@ -19,10 +19,18 @@ export class WalletService {
     );
   }
 
-  submitDeposit(amount: number, utrNumber: string) {
+  generateDepositQr(amount: number) {
+    return this.http.post<{ success: boolean; depositQr: DepositQr }>(
+      `${environment.apiUrl}/wallet/deposit/generate-qr`,
+      { amount }
+    );
+  }
+
+  submitDeposit(amount: number, utrNumber: string, orderId?: string) {
     return this.http.post<{ success: boolean; message: string }>(`${environment.apiUrl}/wallet/deposit/submit`, {
       amount,
       utrNumber,
+      orderId,
     });
   }
 

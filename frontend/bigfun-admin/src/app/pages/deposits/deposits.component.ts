@@ -31,6 +31,7 @@ import { Deposit, Pagination } from '../../core/models';
             <tr>
               <th>User</th>
               <th>Amount</th>
+              <th>Order ID</th>
               <th>UTR</th>
               <th>Method</th>
               <th>Status</th>
@@ -46,6 +47,7 @@ import { Deposit, Pagination } from '../../core/models';
                   <small>{{ d.user.mobile }}</small>
                 </td>
                 <td>₹{{ d.amount }}</td>
+                <td><small>{{ d.orderId }}</small></td>
                 <td>{{ d.utrNumber }}</td>
                 <td>{{ d.paymentMethod }}</td>
                 <td><span class="badge badge-{{ d.status }}">{{ d.status }}</span></td>
