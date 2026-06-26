@@ -46,7 +46,14 @@
   "firebase": {
     "enabled": false,
     "databaseURL": "",
-    "serviceAccountPath": "config/firebase-service-account.json"
+    "serviceAccountPath": "config/firebase-service-account.json",
+    "apiKey": "",
+    "authDomain": "",
+    "projectId": ""
+  },
+  "polling": {
+    "walletIntervalMs": 5000,
+    "battlesIntervalMs": 15000
   },
   "wallet": {
     "minDeposit": 100,

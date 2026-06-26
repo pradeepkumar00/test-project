@@ -6,14 +6,15 @@ import { getAuth, signInWithCustomToken, signOut, Auth } from 'firebase/auth';
 import { getDatabase, ref, onValue, off, Database } from 'firebase/database';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
+import { SettingsService } from './settings.service';
+import { RealtimeSyncConfig } from '../models';
 import { WalletSyncPayload } from '../models/firebase.model';
-
-const POLL_INTERVAL_MS = environment.walletPollIntervalMs ?? 5000;
 
 @Injectable({ providedIn: 'root' })
 export class WalletSyncService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
+  private settingsService = inject(SettingsService);
   private zone = inject(NgZone);
 
   private app: FirebaseApp | null = null;
@@ -31,6 +32,7 @@ export class WalletSyncService {
   private starting = false;
   private lastTotalBalance: number | null = null;
   private mode: 'firebase' | 'poll' | null = null;
+  private realtimeConfig: RealtimeSyncConfig | null = null;
 
   private walletUpdateSubject = new Subject<WalletSyncPayload>();
   walletUpdate$ = this.walletUpdateSubject.asObservable();
@@ -56,19 +58,27 @@ export class WalletSyncService {
       this.activeUserId = normalizedUserId;
       this.lastTotalBalance = this.authService.getUser()?.totalBalance ?? null;
 
-      if (environment.firebase?.enabled) {
-        await this.startFirebase(normalizedUserId);
+      const realtime = await this.loadRealtimeConfig();
+
+      if (realtime.firebaseEnabled) {
+        if (!realtime.firebase) {
+          throw new Error('Firebase is enabled but client config is missing');
+        }
+        await this.startFirebase(normalizedUserId, realtime.firebase);
         this.mode = 'firebase';
-      } else {
-        this.startPolling();
+        return;
+      }
+
+      if (realtime.walletPollingEnabled && realtime.walletPollIntervalMs > 0) {
+        this.startPolling(realtime.walletPollIntervalMs);
         this.mode = 'poll';
         await this.refreshBalance('initial');
+        return;
       }
+
+      console.warn('[WalletSync] Realtime sync disabled in server config');
     } catch (error) {
-      console.warn('[WalletSync] Firebase unavailable, falling back to polling:', error);
-      this.startPolling();
-      this.mode = 'poll';
-      await this.refreshBalance('initial');
+      console.error('[WalletSync] Failed to start wallet sync:', error);
     } finally {
       this.starting = false;
     }
@@ -98,24 +108,36 @@ export class WalletSyncService {
     this.lastTotalBalance = null;
   }
 
+  getRealtimeConfig(): RealtimeSyncConfig | null {
+    return this.realtimeConfig;
+  }
+
+  private async loadRealtimeConfig(): Promise<RealtimeSyncConfig> {
+    if (this.realtimeConfig) {
+      return this.realtimeConfig;
+    }
+
+    const response = await firstValueFrom(this.settingsService.getSettings());
+    this.realtimeConfig = response.settings.realtime;
+    return this.realtimeConfig;
+  }
+
   private normalizeUserId(userId: string | number | { toString(): string }): string {
     return String(userId).trim();
   }
 
-  private async startFirebase(userId: string): Promise<void> {
-    const firebase = environment.firebase;
-    if (!firebase?.enabled) {
-      throw new Error('Firebase is not enabled');
-    }
-
+  private async startFirebase(
+    userId: string,
+    firebase: NonNullable<RealtimeSyncConfig['firebase']>
+  ): Promise<void> {
     this.ensureFirebaseApp(firebase);
     await this.signIn();
     this.listen(userId);
   }
 
-  private startPolling(): void {
+  private startPolling(intervalMs: number): void {
     this.pollSub?.unsubscribe();
-    this.pollSub = interval(POLL_INTERVAL_MS).subscribe(() => {
+    this.pollSub = interval(intervalMs).subscribe(() => {
       void this.refreshBalance('poll');
     });
     document.addEventListener('visibilitychange', this.visibilityHandler);
@@ -173,7 +195,7 @@ export class WalletSyncService {
     }
   }
 
-  private ensureFirebaseApp(firebase: NonNullable<typeof environment.firebase>) {
+  private ensureFirebaseApp(firebase: NonNullable<RealtimeSyncConfig['firebase']>) {
     if (this.app) {
       return;
     }

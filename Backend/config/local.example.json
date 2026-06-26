@@ -47,7 +47,14 @@
   "firebase": {
     "enabled": false,
     "databaseURL": "https://your-project-id-default-rtdb.firebaseio.com",
-    "serviceAccountPath": "config/firebase-service-account.json"
+    "serviceAccountPath": "config/firebase-service-account.json",
+    "apiKey": "your-firebase-web-api-key",
+    "authDomain": "your-project-id.firebaseapp.com",
+    "projectId": "your-project-id"
+  },
+  "polling": {
+    "walletIntervalMs": 5000,
+    "battlesIntervalMs": 15000
   },
   "wallet": {
     "minDeposit": 100,

@@ -87,6 +87,20 @@ export interface WalletWithdrawal {
   createdAt: string;
 }
 
+export interface RealtimeSyncConfig {
+  firebaseEnabled: boolean;
+  walletPollingEnabled: boolean;
+  battlesPollingEnabled: boolean;
+  walletPollIntervalMs: number;
+  battlesPollIntervalMs: number;
+  firebase: {
+    apiKey: string;
+    authDomain: string;
+    databaseURL: string;
+    projectId: string;
+  } | null;
+}
+
 export interface AppSettings {
   appName: string;
   currency: string;
@@ -99,4 +113,5 @@ export interface AppSettings {
   paymentMethods: string[];
   withdrawMethods: string[];
   supportEmail: string;
+  realtime: RealtimeSyncConfig;
 }

@@ -1,5 +1,6 @@
 const config = require('config');
 const { getPlatformSettings } = require('../services/platformSettingsService');
+const { getRealtimeSyncConfig } = require('../utils/realtimeSyncConfig');
 
 const getSettings = async (req, res, next) => {
   try {
@@ -20,6 +21,7 @@ const getSettings = async (req, res, next) => {
         colorMultipliers: config.get('colorMultipliers'),
         numberMultipliers: config.get('numberMultipliers'),
         supportEmail: platform.supportEmail,
+        realtime: getRealtimeSyncConfig(),
       },
     });
   } catch (error) {

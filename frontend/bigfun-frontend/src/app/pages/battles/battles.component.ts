@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BattleService } from '../../core/services/battle.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { Battle } from '../../core/models';
 import { getGameBySlug, GameCard } from '../../core/constants/games';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-battles',
@@ -271,6 +273,7 @@ export class BattlesComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private battleService = inject(BattleService);
   private auth = inject(AuthService);
+  private settingsService = inject(SettingsService);
 
   game: GameCard | undefined;
   gameSlug = '';
@@ -306,9 +309,25 @@ export class BattlesComponent implements OnInit, OnDestroy {
       if (this.game?.status === 'live') {
         this.loadBattles();
         this.onEntryFeeChange();
-        this.refreshTimer = setInterval(() => this.loadBattles(), 15000);
+        void this.setupBattlePolling();
       }
     });
+  }
+
+  private async setupBattlePolling(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.settingsService.getSettings());
+      const { realtime } = response.settings;
+
+      if (realtime.battlesPollingEnabled && realtime.battlesPollIntervalMs > 0) {
+        this.refreshTimer = setInterval(
+          () => this.loadBattles(),
+          realtime.battlesPollIntervalMs
+        );
+      }
+    } catch (error) {
+      console.warn('[Battles] Failed to load polling config:', error);
+    }
   }
 
   ngOnDestroy() {

@@ -46,7 +46,14 @@
   "firebase": {
     "enabled": "FIREBASE_ENABLED",
     "databaseURL": "FIREBASE_DATABASE_URL",
-    "serviceAccountPath": "FIREBASE_SERVICE_ACCOUNT_PATH"
+    "serviceAccountPath": "FIREBASE_SERVICE_ACCOUNT_PATH",
+    "apiKey": "FIREBASE_API_KEY",
+    "authDomain": "FIREBASE_AUTH_DOMAIN",
+    "projectId": "FIREBASE_PROJECT_ID"
+  },
+  "polling": {
+    "walletIntervalMs": "POLLING_WALLET_INTERVAL_MS",
+    "battlesIntervalMs": "POLLING_BATTLES_INTERVAL_MS"
   },
   "wallet": {
     "minDeposit": "MIN_DEPOSIT",
