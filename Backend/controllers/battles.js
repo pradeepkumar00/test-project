@@ -2,6 +2,7 @@ const config = require('config');
 const { body } = require('express-validator');
 const Battle = require('../models/Battle');
 const User = require('../models/User');
+const { getPlatformSettings } = require('../services/platformSettingsService');
 const {
   createBattle,
   joinBattle,
@@ -11,9 +12,20 @@ const {
 } = require('../services/battleService');
 
 const createBattleValidation = [
-  body('entryFee')
-    .isFloat({ min: config.get('battle.minEntryFee') })
-    .withMessage(`Minimum entry fee is ${config.get('battle.minEntryFee')}`),
+  body('entryFee').custom(async (value) => {
+    const platform = await getPlatformSettings();
+    const fee = parseFloat(value);
+    if (Number.isNaN(fee)) {
+      throw new Error('Entry fee must be a number');
+    }
+    if (fee < platform.minEntryFee) {
+      throw new Error(`Minimum entry fee is ${platform.minEntryFee}`);
+    }
+    if (fee > platform.maxEntryFee) {
+      throw new Error(`Maximum entry fee is ${platform.maxEntryFee}`);
+    }
+    return true;
+  }),
   body('gameType').optional().isString(),
 ];
 

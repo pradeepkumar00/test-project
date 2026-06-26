@@ -97,7 +97,7 @@ const rejectWithdrawal = async (withdrawId, reason, adminId) => {
   await user.save();
 
   withdraw.status = 'rejected';
-  withdraw.rejectReason = reason || 'Rejected by admin';
+  withdraw.rejectReason = reason.trim();
   withdraw.processedAt = new Date();
   withdraw.metadata = { ...withdraw.metadata, rejectedBy: adminId };
   await withdraw.save();

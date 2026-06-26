@@ -6,6 +6,7 @@ const { recordTransaction } = require('../services/paymentService');
 const { createCustomToken, isEnabled: isFirebaseEnabled } = require('../services/firebaseService');
 const { revokeToken } = require('../services/tokenBlacklistService');
 const { generateToken, generateReferralCode, sanitizeUser } = require('../utils/helpers');
+const { getPlatformSettings } = require('../services/platformSettingsService');
 
 const sendOtpValidation = [
   body('mobile').matches(/^[6-9]\d{9}$/).withMessage('Valid 10-digit Indian mobile required'),
@@ -70,6 +71,9 @@ const register = async (req, res, next) => {
       if (!exists) isUnique = true;
     }
 
+    const platform = await getPlatformSettings();
+    const referralBonus = platform.referralBonus;
+
     const user = await User.create({
       mobile,
       password,
@@ -77,19 +81,19 @@ const register = async (req, res, next) => {
       referralCode: code,
       referredBy: referrer?._id || null,
       isVerified: true,
-      bonusBalance: referrer ? config.get('wallet.referralBonus') : 0,
+      bonusBalance: referrer ? referralBonus : 0,
     });
 
     if (referrer) {
       referrer.referralCount += 1;
-      referrer.referralEarnings += config.get('wallet.referralBonus');
-      referrer.bonusBalance += config.get('wallet.referralBonus');
+      referrer.referralEarnings += referralBonus;
+      referrer.bonusBalance += referralBonus;
       await referrer.save();
 
       await recordTransaction({
         userId: referrer._id,
         type: 'referral_bonus',
-        amount: config.get('wallet.referralBonus'),
+        amount: referralBonus,
         balanceBefore: referrer.balance,
         balanceAfter: referrer.balance,
         description: `Referral bonus for ${mobile}`,
@@ -103,7 +107,7 @@ const register = async (req, res, next) => {
       message: 'Registration successful',
       token,
       user: sanitizeUser(user),
-      referralBonus: referrer ? config.get('wallet.referralBonus') : 0,
+      referralBonus: referrer ? referralBonus : 0,
     });
   } catch (error) {
     next(error);
@@ -272,12 +276,14 @@ const validateReferral = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Invalid referral code' });
     }
 
+    const platform = await getPlatformSettings();
+
     res.json({
       success: true,
       referral: {
         code: user.referralCode,
         referrerName: user.name || 'User',
-        bonus: config.get('wallet.referralBonus'),
+        bonus: platform.referralBonus,
       },
     });
   } catch (error) {

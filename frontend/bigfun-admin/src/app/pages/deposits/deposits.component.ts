@@ -2,6 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../core/services/admin.service';
+import {
+  DEFAULT_DEPOSIT_REJECTION_REASONS,
+  OTHER_REJECTION_REASON,
+  resolveRejectionReason,
+} from '../../core/constants/rejection-reasons';
 import { Deposit, Pagination } from '../../core/models';
 
 @Component({
@@ -35,6 +40,7 @@ import { Deposit, Pagination } from '../../core/models';
               <th>UTR</th>
               <th>Method</th>
               <th>Status</th>
+              <th>Reason</th>
               <th>Date</th>
               <th>Actions</th>
             </tr>
@@ -51,6 +57,13 @@ import { Deposit, Pagination } from '../../core/models';
                 <td>{{ d.utrNumber }}</td>
                 <td>{{ d.paymentMethod }}</td>
                 <td><span class="badge badge-{{ d.status }}">{{ d.status }}</span></td>
+                <td>
+                  @if (d.rejectReason) {
+                    <small class="reject-reason">{{ d.rejectReason }}</small>
+                  } @else {
+                    <small class="muted">—</small>
+                  }
+                </td>
                 <td>{{ d.createdAt | date:'short' }}</td>
                 <td>
                   @if (d.status === 'pending') {
@@ -75,21 +88,42 @@ import { Deposit, Pagination } from '../../core/models';
     }
 
     @if (rejectId) {
-      <div class="modal-backdrop" (click)="rejectId = ''">
+      <div class="modal-backdrop" (click)="closeReject()">
         <div class="modal" (click)="$event.stopPropagation()">
           <h3>Reject Deposit</h3>
           <div class="form-group">
-            <label>Reason (optional)</label>
-            <input [(ngModel)]="rejectReason" placeholder="Reason for rejection" />
+            <label>Rejection reason</label>
+            <select [(ngModel)]="rejectReasonSelect">
+              <option value="">Select a reason</option>
+              @for (reason of rejectionReasons; track reason) {
+                <option [value]="reason">{{ reason }}</option>
+              }
+            </select>
           </div>
+          @if (rejectReasonSelect === otherReasonLabel) {
+            <div class="form-group">
+              <label>Custom reason</label>
+              <input [(ngModel)]="rejectReasonCustom" placeholder="Enter rejection reason" />
+            </div>
+          }
+          @if (rejectError) {
+            <p class="reject-error">{{ rejectError }}</p>
+          }
           <div class="modal-actions">
-            <button class="btn btn-outline" (click)="rejectId = ''">Cancel</button>
-            <button class="btn btn-danger" (click)="reject()">Reject</button>
+            <button class="btn btn-outline" (click)="closeReject()">Cancel</button>
+            <button class="btn btn-danger" [disabled]="rejecting" (click)="reject()">
+              {{ rejecting ? 'Rejecting...' : 'Reject' }}
+            </button>
           </div>
         </div>
       </div>
     }
   `,
+  styles: [`
+    .reject-reason { color: #fda4af; line-height: 1.4; display: block; max-width: 220px; }
+    .muted { color: var(--text-muted); }
+    .reject-error { color: #fda4af; font-size: 13px; margin-bottom: 12px; }
+  `],
 })
 export class DepositsComponent implements OnInit {
   private api = inject(AdminApiService);
@@ -99,9 +133,27 @@ export class DepositsComponent implements OnInit {
   statusFilter = 'pending';
   actionId = '';
   rejectId = '';
-  rejectReason = '';
+  rejectReasonSelect = '';
+  rejectReasonCustom = '';
+  rejectError = '';
+  rejecting = false;
+  rejectionReasons = DEFAULT_DEPOSIT_REJECTION_REASONS;
+  otherReasonLabel = OTHER_REJECTION_REASON;
 
-  ngOnInit() { this.load(1); }
+  ngOnInit() {
+    this.loadRejectionReasons();
+    this.load(1);
+  }
+
+  loadRejectionReasons() {
+    this.api.getRejectionReasons().subscribe({
+      next: (res) => {
+        if (res.depositReasons?.length) {
+          this.rejectionReasons = res.depositReasons;
+        }
+      },
+    });
+  }
 
   load(page: number) {
     this.loading = true;
@@ -125,14 +177,37 @@ export class DepositsComponent implements OnInit {
 
   openReject(id: string) {
     this.rejectId = id;
-    this.rejectReason = '';
+    this.rejectReasonSelect = '';
+    this.rejectReasonCustom = '';
+    this.rejectError = '';
+  }
+
+  closeReject() {
+    this.rejectId = '';
+    this.rejectError = '';
   }
 
   reject() {
-    this.api.rejectDeposit(this.rejectId, this.rejectReason).subscribe({
+    const reason = resolveRejectionReason(this.rejectReasonSelect, this.rejectReasonCustom);
+    if (!reason) {
+      this.rejectError =
+        this.rejectReasonSelect === this.otherReasonLabel
+          ? 'Please enter a custom rejection reason'
+          : 'Please select a rejection reason';
+      return;
+    }
+
+    this.rejecting = true;
+    this.rejectError = '';
+    this.api.rejectDeposit(this.rejectId, reason).subscribe({
       next: () => {
-        this.rejectId = '';
+        this.closeReject();
         this.load(this.pagination?.page || 1);
+        this.rejecting = false;
+      },
+      error: (err) => {
+        this.rejectError = err.error?.message || 'Failed to reject deposit';
+        this.rejecting = false;
       },
     });
   }

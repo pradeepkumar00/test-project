@@ -10,6 +10,8 @@ const usersController = require('../../controllers/admin/users');
 const withdrawalsController = require('../../controllers/admin/withdrawals');
 const kycController = require('../../controllers/admin/kyc');
 const transactionsController = require('../../controllers/admin/transactions');
+const settingsController = require('../../controllers/admin/settings');
+const rejectionReasonsController = require('../../controllers/admin/rejectionReasons');
 
 const router = express.Router();
 
@@ -24,10 +26,16 @@ router.use(adminAuth);
 router.get('/auth/profile', authController.getProfile);
 router.post('/auth/logout', authController.logout);
 router.get('/dashboard', dashboardController.getDashboard);
+router.get('/rejection-reasons', rejectionReasonsController.getRejectionReasons);
 
 router.get('/deposits', depositsController.listDeposits);
 router.post('/deposits/:id/approve', depositsController.approveDeposit);
-router.post('/deposits/:id/reject', [body('reason').optional().isString()], validate, depositsController.rejectDeposit);
+router.post(
+  '/deposits/:id/reject',
+  [body('reason').trim().notEmpty().withMessage('Rejection reason is required')],
+  validate,
+  depositsController.rejectDeposit
+);
 
 router.get('/battles', battlesController.listBattles);
 router.get('/battles/:id', battlesController.getBattle);
@@ -53,12 +61,20 @@ router.post(
 
 router.get('/withdrawals', withdrawalsController.listWithdrawals);
 router.post('/withdrawals/:id/approve', withdrawalsController.approveWithdraw);
-router.post('/withdrawals/:id/reject', [body('reason').optional().isString()], validate, withdrawalsController.rejectWithdraw);
+router.post(
+  '/withdrawals/:id/reject',
+  [body('reason').trim().notEmpty().withMessage('Rejection reason is required')],
+  validate,
+  withdrawalsController.rejectWithdraw
+);
 
 router.get('/kyc/pending', kycController.listPendingKyc);
 router.post('/kyc/:userId/approve', kycController.approveKyc);
 router.post('/kyc/:userId/reject', [body('reason').optional().isString()], validate, kycController.rejectKyc);
 
 router.get('/transactions', transactionsController.listTransactions);
+
+router.get('/settings', settingsController.getSettings);
+router.put('/settings', settingsController.updateSettingsValidation, validate, settingsController.updateSettings);
 
 module.exports = router;

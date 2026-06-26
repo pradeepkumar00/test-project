@@ -1,8 +1,10 @@
 const config = require('config');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const { getPlatformSettings } = require('../services/platformSettingsService');
 
 const getReferralCode = async (req, res) => {
+  const platform = await getPlatformSettings();
   const referralLink = `${config.get('appUrl')}/login?refer=${req.user.referralCode}`;
 
   res.json({
@@ -10,7 +12,7 @@ const getReferralCode = async (req, res) => {
     referral: {
       code: req.user.referralCode,
       link: referralLink,
-      bonus: config.get('wallet.referralBonus'),
+      bonus: platform.referralBonus,
       totalReferrals: req.user.referralCount,
       totalEarnings: req.user.referralEarnings,
     },
@@ -19,6 +21,7 @@ const getReferralCode = async (req, res) => {
 
 const getReferralStats = async (req, res, next) => {
   try {
+    const platform = await getPlatformSettings();
     const referredUsers = await User.find({ referredBy: req.user._id })
       .select('mobile name createdAt totalDeposited')
       .sort({ createdAt: -1 });
@@ -34,7 +37,7 @@ const getReferralStats = async (req, res, next) => {
         referralCode: req.user.referralCode,
         totalReferrals: req.user.referralCount,
         totalEarnings: req.user.referralEarnings,
-        bonusPerReferral: config.get('wallet.referralBonus'),
+        bonusPerReferral: platform.referralBonus,
       },
       referredUsers,
       bonusHistory: bonusTransactions,

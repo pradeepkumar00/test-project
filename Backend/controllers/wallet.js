@@ -9,27 +9,53 @@ const { createDepositQr } = require('../services/upiQrService');
 const { submitDepositRequest, completeDeposit, recordTransaction } = require('../services/paymentService');
 const { publishWalletUpdate } = require('../services/firebaseService');
 const { generateOrderId } = require('../utils/helpers');
+const { getPlatformSettings } = require('../services/platformSettingsService');
 
 const depositQrValidation = [
-  body('amount')
-    .isFloat({ min: config.get('wallet.minDeposit') })
-    .withMessage(`Minimum deposit is ₹${config.get('wallet.minDeposit')}`),
+  body('amount').custom(async (value) => {
+    const platform = await getPlatformSettings();
+    if (parseFloat(value) < platform.minDeposit) {
+      throw new Error(`Minimum deposit is ₹${platform.minDeposit}`);
+    }
+    return true;
+  }),
 ];
 
 const depositSubmitValidation = [
-  body('amount')
-    .isFloat({ min: config.get('wallet.minDeposit') })
-    .withMessage(`Minimum deposit is ₹${config.get('wallet.minDeposit')}`),
+  body('amount').custom(async (value) => {
+    const platform = await getPlatformSettings();
+    if (parseFloat(value) < platform.minDeposit) {
+      throw new Error(`Minimum deposit is ₹${platform.minDeposit}`);
+    }
+    return true;
+  }),
   body('utrNumber').notEmpty().trim().withMessage('UTR / Transaction ID is required'),
   body('orderId').optional().isString().trim(),
-  body('paymentMethod').optional().isIn(config.get('paymentMethods')),
+  body('paymentMethod').optional().custom(async (value) => {
+    if (!value) return true;
+    const platform = await getPlatformSettings();
+    if (!platform.paymentMethods.includes(value)) {
+      throw new Error('Invalid payment method');
+    }
+    return true;
+  }),
 ];
 
 const withdrawValidation = [
-  body('amount')
-    .isFloat({ min: config.get('wallet.minWithdraw') })
-    .withMessage(`Minimum withdrawal is ₹${config.get('wallet.minWithdraw')}`),
-  body('method').isIn(config.get('withdrawMethods')).withMessage('Invalid withdrawal method'),
+  body('amount').custom(async (value) => {
+    const platform = await getPlatformSettings();
+    if (parseFloat(value) < platform.minWithdraw) {
+      throw new Error(`Minimum withdrawal is ₹${platform.minWithdraw}`);
+    }
+    return true;
+  }),
+  body('method').custom(async (value) => {
+    const platform = await getPlatformSettings();
+    if (!platform.withdrawMethods.includes(value)) {
+      throw new Error('Invalid withdrawal method');
+    }
+    return true;
+  }),
   body('password').notEmpty().withMessage('Password required for withdrawal'),
 ];
 
@@ -47,13 +73,15 @@ const getBalance = async (req, res) => {
 };
 
 const getPaymentDetails = async (req, res) => {
+  const platform = await getPlatformSettings();
   res.json({
     success: true,
     payment: {
-      label: config.get('wallet.paymentLabel'),
-      upiId: config.get('wallet.upiId'),
+      label: platform.paymentLabel,
+      upiId: platform.upiId,
+      upiPayeeName: platform.upiPayeeName,
       upiQrImage: config.get('wallet.upiQrImage'),
-      minDeposit: config.get('wallet.minDeposit'),
+      minDeposit: platform.minDeposit,
       instructions: 'Enter amount and tap Add to generate a QR code. Pay the exact amount, then submit your transaction ID for admin approval.',
     },
   });

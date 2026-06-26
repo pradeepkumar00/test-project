@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { WalletService } from '../../core/services/wallet.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { AuthService } from '../../core/services/auth.service';
 import { WalletSyncService } from '../../core/services/wallet-sync.service';
-import { DepositQr, PaymentDetails } from '../../core/models';
+import { DepositQr, PaymentDetails, WalletDeposit, WalletWithdrawal } from '../../core/models';
 
 @Component({
   selector: 'app-wallet',
@@ -79,11 +80,15 @@ import { DepositQr, PaymentDetails } from '../../core/models';
         </div>
 
         <h3 class="section-title mt">Recent Deposits</h3>
-        @for (d of deposits; track $index) {
+        @for (d of deposits; track d._id) {
           <div class="deposit-item card">
-            <div>
+            <div class="deposit-info">
               <strong>₹{{ d.amount }}</strong>
               @if (d.orderId) { <small class="ref"> · {{ d.orderId }}</small> }
+              <small class="date">{{ d.createdAt | date:'medium' }}</small>
+              @if (d.status === 'rejected' && d.rejectReason) {
+                <small class="reject-reason">Reason: {{ d.rejectReason }}</small>
+              }
             </div>
             <span class="status" [ngClass]="d.status">{{ d.status }}</span>
           </div>
@@ -91,10 +96,10 @@ import { DepositQr, PaymentDetails } from '../../core/models';
       }
 
       @if (tab === 'withdraw') {
-        <p class="sub">Minimum withdrawal ₹110. Amount will be sent after admin approval.</p>
+        <p class="sub">Minimum withdrawal ₹{{ minWithdraw }}. Amount will be sent after admin approval.</p>
         <div class="form-group">
           <label>Withdraw Amount</label>
-          <input type="number" [(ngModel)]="withdrawAmount" placeholder="Amount" />
+          <input type="number" [(ngModel)]="withdrawAmount" [min]="minWithdraw" placeholder="Amount" />
         </div>
         <div class="form-group">
           <label>Method</label>
@@ -114,6 +119,24 @@ import { DepositQr, PaymentDetails } from '../../core/models';
         <button class="btn btn-gold btn-block" [disabled]="withdrawing" (click)="submitWithdraw()">
           {{ withdrawing ? 'Submitting...' : 'Request Withdrawal' }}
         </button>
+
+        <h3 class="section-title mt">Recent Withdrawals</h3>
+        @if (!withdrawals.length) {
+          <p class="empty-note">No withdrawal requests yet.</p>
+        }
+        @for (w of withdrawals; track w._id) {
+          <div class="deposit-item card">
+            <div class="deposit-info">
+              <strong>₹{{ w.amount }}</strong>
+              <small class="ref">{{ w.method }}</small>
+              <small class="date">{{ w.createdAt | date:'medium' }}</small>
+              @if (w.status === 'rejected' && w.rejectReason) {
+                <small class="reject-reason">Reason: {{ w.rejectReason }}</small>
+              }
+            </div>
+            <span class="status" [ngClass]="w.status">{{ w.status }}</span>
+          </div>
+        }
       }
 
       @if (error) { <div class="alert error">{{ error }}</div> }
@@ -162,10 +185,15 @@ import { DepositQr, PaymentDetails } from '../../core/models';
     .hint { font-size: 13px; color: var(--text-muted); margin-top: 12px; text-align: center; }
     .mt { margin-top: 28px; }
     .deposit-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 15px; }
+    .deposit-info { display: flex; flex-direction: column; gap: 4px; }
     .ref { color: var(--text-muted); font-size: 12px; }
+    .date { color: var(--text-muted); font-size: 12px; }
+    .reject-reason { color: #fda4af; font-size: 12px; line-height: 1.4; }
+    .empty-note { color: var(--text-muted); font-size: 14px; margin-bottom: 12px; }
     .status { font-size: 13px; text-transform: capitalize; }
     .status.pending { color: var(--gold); }
     .status.approved { color: var(--success); }
+    .status.completed { color: var(--success); }
     .status.rejected { color: var(--danger); }
 
     @media (max-width: 768px) {
@@ -186,6 +214,7 @@ import { DepositQr, PaymentDetails } from '../../core/models';
 })
 export class WalletComponent implements OnInit, OnDestroy {
   private walletService = inject(WalletService);
+  private settingsService = inject(SettingsService);
   private auth = inject(AuthService);
   private walletSync = inject(WalletSyncService);
   private walletSub?: Subscription;
@@ -196,6 +225,7 @@ export class WalletComponent implements OnInit, OnDestroy {
   amount = 500;
   utrNumber = '';
   withdrawAmount = 110;
+  minWithdraw = 110;
   withdrawMethod = 'UPI';
   upiId = '';
   withdrawPassword = '';
@@ -204,17 +234,28 @@ export class WalletComponent implements OnInit, OnDestroy {
   withdrawing = false;
   error = '';
   message = '';
-  deposits: { amount: number; status: string; orderId?: string }[] = [];
+  deposits: WalletDeposit[] = [];
+  withdrawals: WalletWithdrawal[] = [];
 
   ngOnInit() {
     this.walletService.getPaymentDetails().subscribe({
       next: (r) => (this.payment = r.payment),
     });
+    this.settingsService.getSettings().subscribe({
+      next: (r) => {
+        this.minWithdraw = r.settings.minWithdraw;
+        if (this.withdrawAmount < this.minWithdraw) {
+          this.withdrawAmount = this.minWithdraw;
+        }
+      },
+    });
     this.loadDeposits();
+    this.loadWithdrawals();
 
     this.walletSub = this.walletSync.walletUpdate$.subscribe((update) => {
       if (update.reason === 'deposit_approved' || update.reason === 'balance_sync') {
         this.loadDeposits();
+        this.loadWithdrawals();
         if (update.reason === 'deposit_approved') {
           this.message = 'Deposit approved! Wallet balance updated.';
         }
@@ -253,8 +294,13 @@ export class WalletComponent implements OnInit, OnDestroy {
 
   loadDeposits() {
     this.walletService.getDeposits().subscribe({
-      next: (r) =>
-        (this.deposits = r.deposits as { amount: number; status: string; orderId?: string }[]),
+      next: (r) => (this.deposits = r.deposits),
+    });
+  }
+
+  loadWithdrawals() {
+    this.walletService.getWithdrawals().subscribe({
+      next: (r) => (this.withdrawals = r.withdrawals),
     });
   }
 
@@ -307,6 +353,7 @@ export class WalletComponent implements OnInit, OnDestroy {
         next: (r) => {
           this.message = r.message;
           this.withdrawPassword = '';
+          this.loadWithdrawals();
           this.auth.fetchProfile().subscribe();
           this.withdrawing = false;
         },

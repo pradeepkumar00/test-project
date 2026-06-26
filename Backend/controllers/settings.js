@@ -1,22 +1,30 @@
 const config = require('config');
+const { getPlatformSettings } = require('../services/platformSettingsService');
 
-const getSettings = (req, res) => {
-  res.json({
-    success: true,
-    settings: {
-      appName: config.get('appName'),
-      currency: config.get('currency'),
-      currencySymbol: config.get('currencySymbol'),
-      minDeposit: config.get('wallet.minDeposit'),
-      minWithdraw: config.get('wallet.minWithdraw'),
-      referralBonus: config.get('wallet.referralBonus'),
-      paymentMethods: config.get('paymentMethods'),
-      withdrawMethods: config.get('withdrawMethods'),
-      colorMultipliers: config.get('colorMultipliers'),
-      numberMultipliers: config.get('numberMultipliers'),
-      supportEmail: config.get('supportEmail'),
-    },
-  });
+const getSettings = async (req, res, next) => {
+  try {
+    const platform = await getPlatformSettings();
+    res.json({
+      success: true,
+      settings: {
+        appName: config.get('appName'),
+        currency: platform.currency,
+        currencySymbol: platform.currencySymbol,
+        minDeposit: platform.minDeposit,
+        minWithdraw: platform.minWithdraw,
+        referralBonus: platform.referralBonus,
+        minEntryFee: platform.minEntryFee,
+        maxEntryFee: platform.maxEntryFee,
+        paymentMethods: platform.paymentMethods,
+        withdrawMethods: platform.withdrawMethods,
+        colorMultipliers: config.get('colorMultipliers'),
+        numberMultipliers: config.get('numberMultipliers'),
+        supportEmail: platform.supportEmail,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 const healthCheck = (req, res) => {

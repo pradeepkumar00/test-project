@@ -138,6 +138,7 @@ export class AdminLayoutComponent {
     { path: '/users', label: '👥 Users' },
     { path: '/kyc', label: '🪪 KYC' },
     { path: '/transactions', label: '📋 Transactions' },
+    { path: '/settings', label: '⚙️ Settings' },
   ];
 
   logout() {

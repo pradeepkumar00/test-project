@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
+import { SettingsService } from '../../core/services/settings.service';
 
 @Component({
   selector: 'app-support',
@@ -9,7 +10,14 @@ import { Component } from '@angular/core';
       <h2 class="section-title">Support</h2>
       <div class="card">
         <p>Need help? Contact our support team.</p>
-        <p class="email">📧 support&#64;bigfun.in</p>
+        @if (supportEmail) {
+          <p class="email">
+            📧
+            <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a>
+          </p>
+        } @else {
+          <p class="email muted">Loading support contact...</p>
+        }
         <p class="note">We typically respond within 24 hours.</p>
       </div>
       <div class="card faq">
@@ -31,6 +39,9 @@ import { Component } from '@angular/core';
   `,
   styles: [`
     .email { color: var(--gold); font-size: 18px; margin: 16px 0; }
+    .email a { color: inherit; text-decoration: none; }
+    .email a:hover { text-decoration: underline; }
+    .muted { color: var(--text-muted); font-size: 14px; }
     .note { color: var(--text-muted); font-size: 13px; }
     .faq { margin-top: 16px; }
     .faq h3 { margin-bottom: 12px; }
@@ -39,4 +50,19 @@ import { Component } from '@angular/core';
     .faq p { color: var(--text-muted); font-size: 13px; margin-top: 6px; padding-left: 8px; }
   `],
 })
-export class SupportComponent {}
+export class SupportComponent implements OnInit {
+  private settingsService = inject(SettingsService);
+
+  supportEmail = '';
+
+  ngOnInit() {
+    this.settingsService.getSettings().subscribe({
+      next: (res) => {
+        this.supportEmail = res.settings.supportEmail;
+      },
+      error: () => {
+        this.supportEmail = '';
+      },
+    });
+  }
+}

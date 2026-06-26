@@ -3,10 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import {
   Battle,
+  CurrencyOption,
   DashboardStats,
   Deposit,
   KycUser,
   Pagination,
+  PlatformSettings,
   Transaction,
   User,
   Withdrawal,
@@ -19,6 +21,14 @@ export class AdminApiService {
 
   getDashboard() {
     return this.http.get<{ success: boolean; stats: DashboardStats }>(`${this.base}/dashboard`);
+  }
+
+  getRejectionReasons() {
+    return this.http.get<{
+      success: boolean;
+      depositReasons: string[];
+      withdrawalReasons: string[];
+    }>(`${this.base}/rejection-reasons`);
   }
 
   getDeposits(page = 1, status = '') {
@@ -112,6 +122,23 @@ export class AdminApiService {
     return this.http.get<{ success: boolean; transactions: Transaction[]; pagination: Pagination }>(
       `${this.base}/transactions`,
       { params }
+    );
+  }
+
+  getPlatformSettings() {
+    return this.http.get<{
+      success: boolean;
+      settings: PlatformSettings;
+      currencies: CurrencyOption[];
+      paymentMethodOptions: string[];
+      withdrawMethodOptions: string[];
+    }>(`${this.base}/settings`);
+  }
+
+  updatePlatformSettings(settings: Omit<PlatformSettings, 'currencySymbol' | 'updatedAt'>) {
+    return this.http.put<{ success: boolean; message: string; settings: PlatformSettings }>(
+      `${this.base}/settings`,
+      settings
     );
   }
 }

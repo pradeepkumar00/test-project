@@ -66,7 +66,7 @@ const rejectDeposit = async (req, res, next) => {
     }
 
     deposit.status = 'rejected';
-    deposit.rejectReason = reason || 'Rejected by admin';
+    deposit.rejectReason = reason.trim();
     deposit.reviewedBy = req.admin._id;
     deposit.reviewedAt = new Date();
     await deposit.save();

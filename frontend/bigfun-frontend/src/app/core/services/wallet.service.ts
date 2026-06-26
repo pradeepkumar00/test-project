@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { PaymentDetails, DepositQr } from '../models';
+import { PaymentDetails, DepositQr, WalletDeposit, WalletWithdrawal } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class WalletService {
@@ -35,7 +35,15 @@ export class WalletService {
   }
 
   getDeposits() {
-    return this.http.get<{ success: boolean; deposits: unknown[] }>(`${environment.apiUrl}/wallet/deposits`);
+    return this.http.get<{ success: boolean; deposits: WalletDeposit[] }>(
+      `${environment.apiUrl}/wallet/deposits`
+    );
+  }
+
+  getWithdrawals() {
+    return this.http.get<{ success: boolean; withdrawals: WalletWithdrawal[] }>(
+      `${environment.apiUrl}/wallet/withdrawals`
+    );
   }
 
   requestWithdraw(data: { amount: number; method: string; password: string; upiId?: string }) {

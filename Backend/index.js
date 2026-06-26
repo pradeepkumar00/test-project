@@ -9,6 +9,7 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const { runGameScheduler } = require('./services/gameEngine');
+const { warmPlatformSettingsCache } = require('./services/platformSettingsService');
 
 const app = express();
 const port = config.get('port');
@@ -37,6 +38,7 @@ app.use(errorHandler);
 const start = async () => {
   await connectDB();
   await connectRedis();
+  await warmPlatformSettingsCache();
 
   cron.schedule('* * * * * *', () => {
     runGameScheduler().catch((err) => logger.error('Game scheduler error', { message: err.message }));

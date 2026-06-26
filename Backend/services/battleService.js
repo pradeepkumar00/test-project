@@ -2,6 +2,7 @@ const config = require('config');
 const Battle = require('../models/Battle');
 const User = require('../models/User');
 const { recordTransaction } = require('./paymentService');
+const { getPlatformSettings } = require('./platformSettingsService');
 
 const calculatePrize = (entryFee) => {
   const platformFeePercent = config.get('battle.platformFeePercent');
@@ -51,8 +52,9 @@ const formatBattle = (battle) => ({
 });
 
 const createBattle = async ({ userId, entryFee, gameType = 'ludo-classic' }) => {
-  const minFee = config.get('battle.minEntryFee');
-  const maxFee = config.get('battle.maxEntryFee');
+  const platform = await getPlatformSettings();
+  const minFee = platform.minEntryFee;
+  const maxFee = platform.maxEntryFee;
 
   if (entryFee < minFee || entryFee > maxFee) {
     throw new Error(`Entry fee must be between ${minFee} and ${maxFee}`);

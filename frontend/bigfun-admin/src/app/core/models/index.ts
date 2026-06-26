@@ -98,3 +98,25 @@ export interface KycUser {
   kyc: { panNumber: string; aadhaarNumber: string; isVerified: boolean };
   createdAt: string;
 }
+
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+}
+
+export interface PlatformSettings {
+  upiId: string;
+  upiPayeeName: string;
+  paymentLabel: string;
+  minEntryFee: number;
+  maxEntryFee: number;
+  minDeposit: number;
+  minWithdraw: number;
+  referralBonus: number;
+  currency: string;
+  currencySymbol: string;
+  supportEmail: string;
+  paymentMethods: string[];
+  withdrawMethods: string[];
+  updatedAt?: string;
+}

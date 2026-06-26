@@ -67,3 +67,36 @@ export interface DepositQr {
   upiUri: string;
   expiresInMinutes: number;
 }
+
+export interface WalletDeposit {
+  _id: string;
+  amount: number;
+  status: string;
+  orderId: string;
+  paymentMethod?: string;
+  rejectReason?: string;
+  createdAt: string;
+}
+
+export interface WalletWithdrawal {
+  _id: string;
+  amount: number;
+  status: string;
+  method: string;
+  rejectReason?: string;
+  createdAt: string;
+}
+
+export interface AppSettings {
+  appName: string;
+  currency: string;
+  currencySymbol: string;
+  minDeposit: number;
+  minWithdraw: number;
+  referralBonus: number;
+  minEntryFee: number;
+  maxEntryFee: number;
+  paymentMethods: string[];
+  withdrawMethods: string[];
+  supportEmail: string;
+}
