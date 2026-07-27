@@ -35,16 +35,21 @@ import { ROUTE_PERMISSIONS } from '../../core/constants/permissions';
   styles: [`
     .login-page {
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
     }
     .login-card {
       width: 100%;
       max-width: 420px;
       padding: 36px;
       box-shadow: 0 16px 48px rgba(124, 58, 237, 0.15);
+    }
+    @media (max-width: 480px) {
+      .login-card { padding: 24px 18px; }
+      .logo h1 { font-size: 22px; }
     }
     .logo { text-align: center; margin-bottom: 28px; }
     .brand-mark {
