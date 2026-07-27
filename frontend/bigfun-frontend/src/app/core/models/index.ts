@@ -8,7 +8,10 @@ export interface User {
   totalBalance: number;
   income?: number;
   gamesWon?: number;
+  gamesLost?: number;
   gamesPlayed?: number;
+  totalWon?: number;
+  totalLost?: number;
   isVerified: boolean;
   kycVerified?: boolean;
   referralCount: number;
@@ -30,10 +33,29 @@ export interface Battle {
   totalPool: number;
   platformFee: number;
   status: 'open' | 'running' | 'completed' | 'cancelled';
+  isChallenge?: boolean;
+  direction?: 'incoming' | 'outgoing';
   creator: { id: string; name: string; mobile: string } | null;
   joiner: { id: string; name: string; mobile: string } | null;
+  challengedUser?: { id: string; name: string; mobile: string } | null;
+  winner?: { id: string; name: string; mobile: string } | string | null;
   title?: string;
   createdAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface LeaderboardPlayer {
+  rank: number;
+  id: string;
+  name: string;
+  mobile: string;
+  gamesWon: number;
+  gamesLost: number;
+  gamesPlayed: number;
+  earnings: number;
+  totalLost: number;
+  isMe: boolean;
 }
 
 export interface ApiResponse<T = unknown> {
@@ -113,5 +135,6 @@ export interface AppSettings {
   paymentMethods: string[];
   withdrawMethods: string[];
   supportEmail: string;
+  supportWhatsApp: string;
   realtime: RealtimeSyncConfig;
 }

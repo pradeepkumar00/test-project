@@ -1,6 +1,6 @@
-# BigFun Platform
+# Masti Ludo Platform
 
-BigFun is a full-stack gaming platform (similar to [bigfun.in](https://bigfun.in)) with user-facing gameplay, wallet management, referrals, and an admin portal for operations.
+Masti Ludo is a full-stack skill-gaming platform with a player app (Ludo battles, wallet, referrals) and an admin portal for operations.
 
 This repository is a **monorepo** containing the backend APIs and both Angular frontends.
 
@@ -10,20 +10,25 @@ This repository is a **monorepo** containing the backend APIs and both Angular f
 
 ```
 .
-├── Backend/                    # Node.js API (user + admin routes)
-│   ├── config/                 # App config (default, local, env mapping)
+├── Backend/                         # Node.js API (user + admin routes)
+│   ├── config/                      # App config (default, local, env mapping)
+│   ├── constants/adminPermissions.js
 │   ├── controllers/
-│   │   └── admin/              # Admin-only controllers
+│   │   └── admin/                   # Admin-only controllers (incl. admins CRUD)
 │   ├── models/
 │   ├── routes/
-│   │   └── admin/              # Admin routes (mounted at /api/admin)
+│   │   └── admin/                   # Admin routes → /api/admin
+│   ├── scripts/
+│   │   ├── seed.js                  # Demo data seeder
+│   │   └── onboard-superadmin.js    # Create/reset portal superadmin
+│   ├── secrets/                     # Local credentials (gitignored)
+│   │   └── superadmin.example.json  # Template only
 │   ├── services/
-│   ├── scripts/seed.js         # Demo data seeder
-│   └── index.js                # API entry (port 5000)
+│   └── index.js                     # API entry (port 5000)
 ├── frontend/
-│   ├── bigfun-frontend/        # User Angular app (port 5200)
-│   └── bigfun-admin/           # Admin Angular portal (port 5201)
-├── package.json                # Root workspace scripts
+│   ├── bigfun-frontend/             # User Angular app (port 5200)
+│   └── bigfun-admin/                # Admin Angular portal (port 5201)
+├── package.json                     # Root workspace scripts
 └── README.md
 ```
 
@@ -34,7 +39,7 @@ This repository is a **monorepo** containing the backend APIs and both Angular f
 | Layer | Technology |
 |-------|------------|
 | User API | Node.js, Express 5, MongoDB, Redis, JWT |
-| Admin API | Same server at `/api/admin` with separate admin JWT guard |
+| Admin API | Same server at `/api/admin` with separate admin JWT + permissions |
 | User UI | Angular 19 (standalone components) |
 | Admin UI | Angular 19 |
 | Config | `config` package + `Backend/config/local.json` |
@@ -84,7 +89,23 @@ Edit `Backend/config/local.json` with your JWT secrets and Redis password:
 npm run seed
 ```
 
-### 4. Start all services
+### 4. Onboard portal superadmin (credentials → secrets file)
+
+```bash
+npm run onboard:superadmin -- --mobile 9999999999 --name "Super Admin" --generate --promote
+```
+
+This creates/resets the superadmin and writes credentials to:
+
+```
+Backend/secrets/superadmin.json   ← gitignored — do not commit
+```
+
+Open that file for **mobile + password**, then sign in at the **Superadmin portal** (port 5202).
+
+Regenerate anytime with the same command. Template: `Backend/secrets/superadmin.example.json`.
+
+### 5. Start all services
 
 **Option A — one command (recommended for local dev):**
 
@@ -95,9 +116,10 @@ npm run dev:all
 **Option B — separate terminals:**
 
 ```bash
-npm run dev:api          # API (user + admin) → http://localhost:5000
-npm run start:frontend   # User app → http://localhost:5200
-npm run start:admin      # Admin portal → http://localhost:5201
+npm run dev:api            # API → http://localhost:5000
+npm run start:frontend     # User app → http://localhost:5200
+npm run start:admin        # Admin portal → http://localhost:5201
+npm run start:superadmin   # Superadmin portal → http://localhost:5202
 ```
 
 ---
@@ -106,10 +128,12 @@ npm run start:admin      # Admin portal → http://localhost:5201
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| API | http://localhost:5000/api | User routes: auth, wallet, battles, games |
-| Admin API | http://localhost:5000/api/admin | Deposits, withdrawals, users, KYC |
-| User App | http://localhost:5200 | Player-facing mobile UI |
-| Admin Portal | http://localhost:5201 | Operations dashboard |
+| API | http://localhost:5000/api | User routes |
+| Admin API | http://localhost:5000/api/admin | Staff admin ops (permission-gated) |
+| Superadmin API | http://localhost:5000/api/superadmin | Superadmin-only (admins + settings) |
+| User App | http://localhost:5200 | Player UI |
+| Admin Portal | http://localhost:5201 | Staff operations |
+| Superadmin Portal | http://localhost:5202 | Create admins & assign access |
 
 Health checks:
 - API: `GET http://localhost:5000/api/health`
@@ -117,16 +141,50 @@ Health checks:
 
 ---
 
-## Local dev credentials (after `npm run seed`)
+## Local credentials
 
-> **Do not use these in production.** Change passwords and onboard real admins with `npm run onboard:superadmin`. Never display admin credentials in the UI.
+> **Do not use seed/demo passwords in production.** Never commit `Backend/secrets/` or put real passwords in git.
+
+### Players (after `npm run seed`)
 
 | Role | Mobile | Password |
 |------|--------|----------|
 | Demo player | `9876543210` | `demo123` |
 | Second player | `9123456781` | `demo123` |
 
-`npm run seed` also creates a default superadmin — use `onboard:superadmin` to set your own admin account instead.
+### Admin portal
+
+| Role | How to get credentials |
+|------|------------------------|
+| **Superadmin** | `npm run onboard:superadmin -- --generate --promote` → `Backend/secrets/superadmin.json` → login at **http://localhost:5202** |
+| **Admin** | Created in Superadmin portal → **Admins** page → login at **http://localhost:5201** |
+
+---
+
+## Admin roles & permissions
+
+| Role | Access |
+|------|--------|
+| **Superadmin** | Full access to every page and action |
+| **Admin** | Only permissions assigned by a superadmin |
+
+### Permission areas
+
+| Area | View | Perform |
+|------|------|---------|
+| Dashboard | `dashboard.view` | — |
+| Deposits | `deposits.view` | `deposits.manage` (approve/reject) |
+| Withdrawals | `withdrawals.view` | `withdrawals.manage` |
+| Battles | `battles.view` | `battles.manage` |
+| Users | `users.view` | `users.manage` · `users.balance` |
+| KYC | `kyc.view` | `kyc.manage` |
+| Transactions | `transactions.view` | — |
+| Settings | `settings.view` | `settings.manage` |
+| Admins | — | `admins.manage` |
+
+Sidebar, routes, UI buttons, and APIs all enforce these permissions.
+
+**Create a limited admin:** log in at **Superadmin portal** (5202) → **Admins** → **Create Admin** → tick permissions.
 
 ---
 
@@ -138,10 +196,24 @@ Health checks:
 | `npm run dev:all` | Start API and both frontends |
 | `npm run dev:api` | API with file watch (user + admin routes) |
 | `npm run start:frontend` | User Angular dev server |
-| `npm run start:admin` | Admin Angular dev server |
+| `npm run start:admin` | Staff Admin Angular portal (5201) |
+| `npm run start:superadmin` | Superadmin Angular portal (5202) |
 | `npm run seed` | Seed MongoDB with demo data |
-| `npm run onboard:superadmin` | Create or promote a superadmin account |
+| `npm run onboard:superadmin` | Create/reset superadmin + write `Backend/secrets/superadmin.json` |
 | `npm run build` | Production build for both frontends |
+
+### Superadmin onboard examples
+
+```bash
+# Generate strong password, reset account, save secrets
+npm run onboard:superadmin -- --mobile 9999999999 --generate --promote
+
+# Set an explicit password
+npm run onboard:superadmin -- --mobile 9999999999 --password 'YourStrongPass' --promote
+
+# Skip writing the secrets file
+npm run onboard:superadmin -- --mobile 9999999999 --password 'x' --promote --no-save-secrets
+```
 
 ---
 
@@ -149,29 +221,34 @@ Health checks:
 
 ### User App (`frontend/bigfun-frontend`)
 
-- OTP-based registration & login with referral codes
-- Ludo battles — create, join, open/running lists
-- Color prediction games (Win Go 1/3/5 min)
-- Wallet — UPI deposit (UTR submit), withdraw, transaction history
-- Profile, KYC submission, refer & earn, support
+- OTP-only login (auto-register with optional referral code)
+- Ludo Classic battles — create/join; only platform-fee share comes from referral wallet, rest from deposit wallet
+- Battle history (`/history`) with status filters and win/loss
+- Wallet — deposit / winning / bonus balances; UPI deposit & withdraw sheets
+- Profile — KYC modal, stats (won / lost / played, referral earn, money won/lost)
+- Refer & Earn, WhatsApp support (from platform settings)
+- Bottom nav: Home · Wallet · Refer · Support · Profile
 
 ### Admin Portal (`frontend/bigfun-admin`)
 
 - Dashboard with platform stats
 - Approve/reject deposits and withdrawals
 - Manage battles (cancel, force-complete, delete)
-- User management (activate/deactivate, balance adjust for superadmin)
-- KYC review
-- Transaction log
+- User management (status, balance adjust when permitted)
+- KYC review, transaction log
+- Live **Platform Settings** (UPI, fees, WhatsApp, payment methods)
+- **Admins** page — create admins and assign permissions (superadmin)
 
 ### Backend (`Backend/`)
 
 - JWT auth for users and admins (separate secrets)
-- Redis-backed OTP with `bigfun:` key prefix
+- Role-based admin permissions (`admin` / `superadmin`)
+- Redis-backed OTP with key prefix
 - SMS OTP via Twilio (configurable; console fallback for local dev)
-- Wallet with admin approval flow for deposits
-- Battle engine with platform fee (2.5%)
-- Color game scheduler via cron
+- Wallet with admin approval for deposits/withdrawals
+- Battle engine with platform fee; prize + loss tracking
+- Platform settings stored in MongoDB (editable from admin)
+- Color game scheduler via cron (legacy Win Go modes)
 
 ---
 
@@ -192,32 +269,24 @@ The backend uses the [`config`](https://github.com/node-config/node-config) pack
 cp Backend/config/local.example.json Backend/config/local.json
 ```
 
-Edit `Backend/config/local.json` to change **any** setting — ports, OTP expiry, Redis, JWT, Twilio, wallet, battles, etc. You only need to change the keys you care about; unset keys fall back to `default.json`.
+Edit `Backend/config/local.json` to change **any** setting — ports, OTP expiry, Redis, JWT, Twilio, wallet, battles, etc. Unset keys fall back to `default.json`.
 
-**Examples in `local.json`:**
+### Secrets (gitignored)
 
-```json
-{
-  "otp": { "expiryMinutes": 10 },
-  "port": 5000,
-  "jwt": { "secret": "your-secret" },
-  "adminJwt": { "secret": "your-admin-secret" }
-}
-```
-
-### Config files summary
+| Path | Purpose |
+|------|---------|
+| `Backend/config/local.json` | JWT, Redis, Twilio, etc. |
+| `Backend/secrets/superadmin.json` | Portal superadmin login credentials |
+| `Backend/config/firebase-service-account.json` | Optional Firebase realtime |
 
 ```
-Backend/config/
-├── default.json                      ← base defaults (committed)
-├── local.json                        ← YOUR overrides (gitignored, copy from example)
-├── local.example.json                ← full template with every key
-└── custom-environment-variables.json ← env vars for production deploys
+Backend/secrets/
+├── .gitkeep
+├── superadmin.example.json   ← committed template
+└── superadmin.json           ← created by onboard script (gitignored)
 ```
 
 ### SMS / Twilio (OTP)
-
-OTP delivery is handled by `Backend/services/smsService.js`. The provider is config-driven:
 
 | `sms.provider` | Behavior |
 |----------------|----------|
@@ -240,27 +309,9 @@ OTP delivery is handled by `Backend/services/smsService.js`. The provider is con
 }
 ```
 
-Or set environment variables (see `.env.example`):
-
-```bash
-SMS_PROVIDER=twilio
-TWILIO_ACCOUNT_SID=ACxxxxxxxx
-TWILIO_AUTH_TOKEN=your-token
-TWILIO_FROM=+1234567890
-TWILIO_COUNTRY_CODE=+91
-```
-
-**OTP message template** (optional, in `default.json` or override in local config):
-
-```
-Your {appName} OTP for {purpose} is {otp}. Valid for {expiryMinutes} minutes. Do not share this code.
-```
-
-Placeholders: `{appName}`, `{otp}`, `{purpose}`, `{expiryMinutes}`
+Or set environment variables (see `.env.example`).
 
 ### Request logging
-
-HTTP requests are logged via `middleware/requestLogger.js` with IP, method, path, status, duration, user/admin identity, query, and body (sensitive fields redacted).
 
 Configure in `Backend/config/local.json`:
 
@@ -287,31 +338,38 @@ Production env vars: `LOG_LEVEL`, `LOG_FORMAT=json`, `LOG_HEADERS=true`
 
 | Area | Endpoints |
 |------|-----------|
-| Auth | `/auth/send-otp`, `/auth/register`, `/auth/login`, `/auth/logout`, `/auth/profile` |
+| Auth | `/auth/send-otp`, `/auth/login`, `/auth/logout`, `/auth/profile` |
 | Wallet | `/wallet/balance`, `/wallet/deposit`, `/wallet/withdraw`, `/wallet/transactions` |
-| Battles | `/battles/create`, `/battles/join`, `/battles/open`, `/battles/running` |
+| Battles | `/battles/create`, `/battles/join`, `/battles/open`, `/battles/running`, `/battles/my` |
+| Profile | `/profile/stats`, `/profile/history`, `/profile/kyc` |
+| Referral | `/referral/code`, `/referral/stats` |
+| Settings | `/settings` (public platform + support WhatsApp) |
 | Games | `/games/*` (color prediction) |
 | Home | `/home` |
 
 ### Admin API (`/api/admin`)
 
+All routes (except login/health) require admin JWT. Actions also require matching permissions.
+
 | Area | Endpoints |
 |------|-----------|
-| Auth | `/api/admin/auth/login`, `/api/admin/auth/logout`, `/api/admin/auth/profile` |
-| Dashboard | `/api/admin/dashboard` |
-| Deposits | `/api/admin/deposits`, `/api/admin/deposits/:id/approve`, `/api/admin/deposits/:id/reject` |
-| Withdrawals | `/api/admin/withdrawals`, `/api/admin/withdrawals/:id/approve`, `/api/admin/withdrawals/:id/reject` |
-| Battles | `/api/admin/battles`, `/api/admin/battles/:id/cancel`, `/api/admin/battles/:id/complete` |
-| Users | `/api/admin/users`, `/api/admin/users/:id/status`, `/api/admin/users/:id/balance` (superadmin) |
-| KYC | `/api/admin/kyc/pending`, `/api/admin/kyc/:userId/approve`, `/api/admin/kyc/:userId/reject` |
-| Transactions | `/api/admin/transactions` |
+| Auth | `/auth/login`, `/auth/logout`, `/auth/profile` |
+| Dashboard | `/dashboard` |
+| Deposits | `/deposits`, `/deposits/:id/approve`, `/deposits/:id/reject` |
+| Withdrawals | `/withdrawals`, `/withdrawals/:id/approve`, `/withdrawals/:id/reject` |
+| Battles | `/battles`, `/battles/:id/cancel`, `/battles/:id/complete`, `DELETE /battles/:id` |
+| Users | `/users`, `/users/:id/status`, `/users/:id/balance` |
+| KYC | `/kyc/pending`, `/kyc/:userId/approve`, `/kyc/:userId/reject` |
+| Transactions | `/transactions` |
+| Settings | `GET/PUT /settings` |
+| Admins | `GET/POST /admins`, `PUT /admins/:id`, `GET /permissions` |
 
 ---
 
 ## Development Notes
 
 - User frontend proxies `/api` → `http://localhost:5000` (`frontend/bigfun-frontend/proxy.conf.json`)
-- Admin portal proxies `/api` → `http://localhost:5000`; admin app calls `/api/admin/*` (`frontend/bigfun-admin/proxy.conf.json`)
+- Admin portal proxies `/api` → `http://localhost:5000`; app calls `/api/admin/*` (`frontend/bigfun-admin/proxy.conf.json`)
 - VS Code: use **Run All (BigFun)** task from `.vscode/tasks.json`
 - Each package can also be run independently from its own folder
 
@@ -331,7 +389,7 @@ Update production API URLs in:
 - `frontend/bigfun-frontend/src/environments/environment.prod.ts`
 - `frontend/bigfun-admin/src/environments/environment.prod.ts`
 
-Deploy the Backend with `NODE_ENV=production` and environment variables set.
+Deploy the Backend with `NODE_ENV=production` and environment variables set. Onboard production superadmin with `onboard:superadmin` and keep `Backend/secrets/` off the server disk in favor of a secret manager when possible.
 
 ---
 
@@ -339,6 +397,7 @@ Deploy the Backend with `NODE_ENV=production` and environment variables set.
 
 - [User frontend](frontend/bigfun-frontend/README.md)
 - [Admin portal](frontend/bigfun-admin/README.md)
+- [Superadmin portal](frontend/bigfun-superadmin/README.md)
 
 ---
 

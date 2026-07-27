@@ -1,6 +1,6 @@
-# BigFun Frontend
+# Masti Ludo — User App
 
-User-facing Angular 19 app for the BigFun gaming platform.
+Player-facing Angular 19 app for Ludo battles, wallet, referrals, and profile.
 
 > See the [root README](../../README.md) for monorepo setup, prerequisites, and demo credentials.
 
@@ -23,26 +23,27 @@ npm start
 
 | Route | Screen |
 |-------|--------|
-| `/login` | Login |
-| `/register?refer=CODE` | Register with referral |
-| `/home` | Battles — create/join |
-| `/wallet` | Deposit & withdraw |
-| `/profile` | Profile, KYC, history |
+| `/login` | OTP login (optional referral on first signup) |
+| `/home` | Ludo Classic — create/join battles |
+| `/wallet` | Deposit, winning & bonus balances |
+| `/history` | Battle history (won / lost / open / live) |
+| `/profile` | Profile, KYC, battle & earning stats |
 | `/refer` | Refer & earn |
-| `/support` | Support & FAQs |
+| `/support` | Help Center / WhatsApp |
 
-## Demo Login
+## Demo player (after seed)
 
 ```
 Mobile: 9876543210
-Password: demo123
 ```
+
+Use OTP from the API console when `sms.provider` is `console`.
 
 ## Structure
 
 ```
 src/app/
   core/     → services, guards, interceptors, models
-  pages/    → login, register, home, wallet, profile, refer, support
-  shared/   → header, bottom-nav
+  pages/    → login, home, wallet, history, profile, refer, support, battles
+  shared/   → layout (header, menu, bottom nav)
 ```

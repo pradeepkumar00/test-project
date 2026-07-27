@@ -27,28 +27,33 @@ const createBattleValidation = [
     return true;
   }),
   body('gameType').optional().isString(),
+  body('challengedUserId').optional().isMongoId().withMessage('Invalid player id'),
 ];
 
 const createBattleHandler = async (req, res) => {
   try {
-    const { entryFee, gameType = 'ludo-classic' } = req.body;
+    const { entryFee, gameType = 'ludo-classic', challengedUserId = null } = req.body;
     const battle = await createBattle({
       userId: req.user._id,
       entryFee: parseFloat(entryFee),
       gameType,
+      challengedUserId,
     });
 
     const populated = await Battle.findById(battle._id)
       .populate('creator', 'name mobile')
-      .populate('joiner', 'name mobile');
+      .populate('joiner', 'name mobile')
+      .populate('challengedUser', 'name mobile');
 
     const user = await User.findById(req.user._id);
 
     res.status(201).json({
       success: true,
-      message: 'Battle created successfully',
+      message: challengedUserId ? 'Challenge sent successfully' : 'Battle created successfully',
       battle: formatBattle(populated),
       balance: user.balance,
+      bonusBalance: user.bonusBalance,
+      totalBalance: user.balance + user.bonusBalance,
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -61,7 +66,8 @@ const getOpenBattles = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const gameType = req.query.gameType;
 
-    const filter = { status: 'open' };
+    // Public open battles only (exclude private challenges)
+    const filter = { status: 'open', challengedUser: null };
     if (gameType) filter.gameType = gameType;
 
     const [battles, total] = await Promise.all([
@@ -78,6 +84,71 @@ const getOpenBattles = async (req, res, next) => {
       battles: battles.map(formatBattle),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getChallenges = async (req, res, next) => {
+  try {
+    const gameType = req.query.gameType;
+    const userId = req.user._id;
+
+    const filter = {
+      status: 'open',
+      challengedUser: { $ne: null },
+      $or: [{ challengedUser: userId }, { creator: userId }],
+    };
+    if (gameType) filter.gameType = gameType;
+
+    const battles = await Battle.find(filter)
+      .populate('creator', 'name mobile')
+      .populate('challengedUser', 'name mobile')
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    res.json({
+      success: true,
+      battles: battles.map((b) => ({
+        ...formatBattle(b),
+        direction:
+          b.challengedUser && b.challengedUser._id.toString() === userId.toString()
+            ? 'incoming'
+            : 'outgoing',
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getLeaderboard = async (req, res, next) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+    const currentUserId = req.user._id.toString();
+
+    const players = await User.find({
+      isActive: true,
+    })
+      .select('name mobile gamesWon gamesLost gamesPlayed totalWon totalLost')
+      .sort({ gamesWon: -1, totalWon: -1, gamesPlayed: -1 })
+      .limit(limit)
+      .lean();
+
+    const leaderboard = players.map((p, index) => ({
+      rank: index + 1,
+      id: p._id.toString(),
+      name: p.name || p.mobile,
+      mobile: p.mobile,
+      gamesWon: p.gamesWon || 0,
+      gamesLost: p.gamesLost || 0,
+      gamesPlayed: p.gamesPlayed || 0,
+      earnings: p.totalWon || 0,
+      totalLost: p.totalLost || 0,
+      isMe: p._id.toString() === currentUserId,
+    }));
+
+    res.json({ success: true, leaderboard });
   } catch (error) {
     next(error);
   }
@@ -120,12 +191,18 @@ const joinBattleHandler = async (req, res) => {
 
     const populated = await Battle.findById(battle._id)
       .populate('creator', 'name mobile')
-      .populate('joiner', 'name mobile');
+      .populate('joiner', 'name mobile')
+      .populate('challengedUser', 'name mobile');
+
+    const user = await User.findById(req.user._id);
 
     res.json({
       success: true,
       message: 'Battle joined! Game is now running.',
       battle: formatBattle(populated),
+      balance: user?.balance,
+      bonusBalance: user?.bonusBalance,
+      totalBalance: user ? user.balance + user.bonusBalance : undefined,
     });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -196,6 +273,8 @@ module.exports = {
   createBattleHandler,
   getOpenBattles,
   getRunningBattles,
+  getChallenges,
+  getLeaderboard,
   joinBattleHandler,
   completeBattleHandler,
   getMyBattles,

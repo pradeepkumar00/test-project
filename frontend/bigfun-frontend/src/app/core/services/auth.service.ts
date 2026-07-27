@@ -44,6 +44,19 @@ export class AuthService {
       .pipe(tap((res) => this.setSession(res.token, res.user)));
   }
 
+  loginWithOtp(mobile: string, otp: string, referralCode?: string) {
+    return this.http
+      .post<{ success: boolean; token: string; user: User; isNewUser?: boolean }>(
+        `${environment.apiUrl}/auth/login/otp`,
+        {
+          mobile,
+          otp,
+          referralCode: referralCode || undefined,
+        }
+      )
+      .pipe(tap((res) => this.setSession(res.token, res.user)));
+  }
+
   register(data: { mobile: string; password: string; otp: string; referralCode?: string; name?: string }) {
     return this.http
       .post<{ success: boolean; token: string; user: User }>(`${environment.apiUrl}/auth/register`, data)

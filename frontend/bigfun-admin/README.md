@@ -1,8 +1,8 @@
-# BigFun Admin Portal
+# Masti Ludo Admin Portal
 
-Angular 19 admin dashboard for managing deposits, withdrawals, battles, users, and KYC.
+Angular 19 admin dashboard for deposits, withdrawals, battles, users, KYC, settings, and admin access control.
 
-> See the [root README](../../README.md) for monorepo setup, prerequisites, and demo credentials.
+> See the [root README](../../README.md) for monorepo setup, prerequisites, and credentials.
 
 ## Run from monorepo root
 
@@ -21,32 +21,38 @@ npm start
 
 ## Pages
 
-| Route | Screen |
-|-------|--------|
-| `/login` | Admin sign in |
-| `/dashboard` | Platform stats |
-| `/deposits` | Approve/reject deposits |
-| `/withdrawals` | Approve/reject withdrawals |
-| `/battles` | Cancel, complete, delete battles |
-| `/users` | User list, status, balance adjust |
-| `/kyc` | Pending KYC review |
-| `/transactions` | Transaction log |
+| Route | Screen | Typical permission |
+|-------|--------|--------------------|
+| `/login` | Admin sign in | — |
+| `/dashboard` | Platform stats | `dashboard.view` |
+| `/deposits` | Approve/reject deposits | `deposits.view` / `deposits.manage` |
+| `/withdrawals` | Approve/reject withdrawals | `withdrawals.view` / `withdrawals.manage` |
+| `/battles` | Cancel, complete, delete | `battles.view` / `battles.manage` |
+| `/users` | Users, status, balance | `users.view` / `users.manage` / `users.balance` |
+| `/kyc` | Pending KYC review | `kyc.view` / `kyc.manage` |
+| `/transactions` | Transaction log | `transactions.view` |
+| `/settings` | Platform settings | `settings.view` / `settings.manage` |
+| `/admins` | Create admins & permissions | `admins.manage` |
 
-## Admin access
+**Superadmin** has all permissions. **Admin** only sees and can perform what was assigned.
 
-Create a superadmin for local dev (never commit real production passwords):
+## Superadmin credentials
+
+Create/reset from the repo root (password saved to a gitignored secrets file):
 
 ```bash
-npm run onboard:superadmin -- --mobile <10-digit> --password '<strong-password>' --name "Admin"
+npm run onboard:superadmin -- --mobile 9999999999 --generate --promote
 ```
 
-Do not expose admin credentials on the login page or in public docs.
+Credentials: `Backend/secrets/superadmin.json`  
+Do not commit that file or show passwords on the login page.
 
 ## Structure
 
 ```
 src/app/
-  core/     → auth, admin API service, guards, interceptors
-  pages/    → dashboard, deposits, withdrawals, battles, users, kyc, transactions
-  shared/   → admin layout (sidebar)
+  core/     → auth (permissions), admin API, guards, interceptors
+  pages/    → dashboard, deposits, withdrawals, battles, users, kyc,
+              transactions, settings, admins
+  shared/   → admin layout (permission-filtered sidebar)
 ```

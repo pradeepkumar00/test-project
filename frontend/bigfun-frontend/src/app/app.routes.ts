@@ -32,6 +32,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/wallet/wallet.component').then((m) => m.WalletComponent),
       },
       {
+        path: 'history',
+        loadComponent: () =>
+          import('./pages/history/battle-history.component').then((m) => m.BattleHistoryComponent),
+      },
+      {
         path: 'profile',
         loadComponent: () => import('./pages/profile/profile.component').then((m) => m.ProfileComponent),
       },

@@ -2,11 +2,12 @@
   "name": "bigfun",
   "version": "1.0.0",
   "private": true,
-  "description": "BigFun gaming platform monorepo",
+  "description": "Masti Ludo gaming platform monorepo",
   "workspaces": [
     "Backend",
     "frontend/bigfun-frontend",
-    "frontend/bigfun-admin"
+    "frontend/bigfun-admin",
+    "frontend/bigfun-superadmin"
   ],
   "scripts": {
     "install:all": "npm install",
@@ -14,12 +15,15 @@
     "dev:api": "npm run dev -w bigfun-backend",
     "start:frontend": "npm run start -w bigfun-frontend",
     "start:admin": "npm run start -w bigfun-admin",
+    "start:superadmin": "npm run start -w bigfun-superadmin",
     "seed": "npm run seed -w bigfun-backend",
     "onboard:superadmin": "npm run onboard:superadmin -w bigfun-backend --",
+    "migrate:admins": "npm run migrate:admins -w bigfun-backend",
     "build:frontend": "npm run build -w bigfun-frontend",
     "build:admin": "npm run build -w bigfun-admin",
-    "build": "npm run build:frontend && npm run build:admin",
-    "dev:all": "concurrently -n api,web,admin -c blue,green,yellow \"npm run dev:api\" \"npm run start:frontend\" \"npm run start:admin\""
+    "build:superadmin": "npm run build -w bigfun-superadmin",
+    "build": "npm run build:frontend && npm run build:admin && npm run build:superadmin",
+    "dev:all": "concurrently -n api,web,admin,sa -c blue,green,yellow,magenta \"npm run dev:api\" \"npm run start:frontend\" \"npm run start:admin\" \"npm run start:superadmin\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

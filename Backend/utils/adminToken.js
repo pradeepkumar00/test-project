@@ -2,9 +2,14 @@ const config = require('config');
 const jwt = require('jsonwebtoken');
 const { createJwtId } = require('../services/tokenBlacklistService');
 
-const generateAdminToken = (user) =>
+const generateAdminToken = (admin) =>
   jwt.sign(
-    { userId: user._id, role: user.role, type: 'admin' },
+    {
+      adminId: admin._id,
+      userId: admin._id, // backward-compatible claim
+      role: admin.role,
+      type: 'admin',
+    },
     config.get('adminJwt.secret'),
     {
       expiresIn: config.get('adminJwt.expiresIn'),

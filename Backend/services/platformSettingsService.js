@@ -40,6 +40,7 @@ const getConfigDefaults = () => ({
   currency: config.get('currency'),
   currencySymbol: config.get('currencySymbol'),
   supportEmail: config.get('supportEmail'),
+  supportWhatsApp: config.has('supportWhatsApp') ? String(config.get('supportWhatsApp')) : '',
   paymentMethods: [...config.get('paymentMethods')],
   withdrawMethods: [...config.get('withdrawMethods')],
 });
@@ -60,6 +61,9 @@ const toSettings = (doc) => {
     currency: doc.currency ?? defaults.currency,
     currencySymbol: doc.currencySymbol ?? defaults.currencySymbol,
     supportEmail: doc.supportEmail ?? defaults.supportEmail,
+    supportWhatsApp:
+      (doc.supportWhatsApp && String(doc.supportWhatsApp).replace(/\D/g, '')) ||
+      defaults.supportWhatsApp,
     paymentMethods: doc.paymentMethods?.length ? doc.paymentMethods : defaults.paymentMethods,
     withdrawMethods: doc.withdrawMethods?.length ? doc.withdrawMethods : defaults.withdrawMethods,
     updatedAt: doc.updatedAt,
@@ -123,6 +127,7 @@ const updatePlatformSettings = async (updates, adminId) => {
         currency: next.currency,
         currencySymbol: next.currencySymbol,
         supportEmail: next.supportEmail,
+        supportWhatsApp: next.supportWhatsApp,
         paymentMethods: next.paymentMethods,
         withdrawMethods: next.withdrawMethods,
         updatedBy: adminId,

@@ -1,6 +1,6 @@
 {
   "port": 5000,
-  "appName": "BigFun",
+  "appName": "Masti Ludo",
   "appUrl": "http://localhost:5200",
   "mongodb": {
     "uri": "mongodb://127.0.0.1:27017/bigfun"
@@ -25,6 +25,24 @@
   },
   "otp": {
     "expiryMinutes": 10
+  },
+  "kyc": {
+    "aadhaarOtp": {
+      "enabled": false,
+      "baseUrl": "https://your-kyc-provider.example.com",
+      "authType": "bearer",
+      "token": "your-kyc-provider-token",
+      "apiKey": "your-kyc-provider-api-key",
+      "apiKeyHeader": "x-api-key",
+      "username": "",
+      "password": "",
+      "sendOtpPath": "/aadhaar/otp/send",
+      "verifyOtpPath": "/aadhaar/otp/verify",
+      "requestTimeoutMs": 15000,
+      "extraHeaders": {},
+      "extraSendBody": {},
+      "extraVerifyBody": {}
+    }
   },
   "logging": {
     "level": "info",
@@ -78,6 +96,7 @@
   "currency": "INR",
   "currencySymbol": "₹",
   "supportEmail": "support@bigfun.in",
+  "supportWhatsApp": "919876543210",
   "paymentMethods": ["UPI", "Paytm", "PhonePe", "Bank Transfer"],
   "withdrawMethods": ["UPI", "Bank Transfer"],
   "games": {

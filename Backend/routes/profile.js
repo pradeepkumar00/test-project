@@ -11,8 +11,20 @@ router.use(auth);
 router.get('/stats', profileController.getProfileStats);
 router.get('/history', profileController.getHistory);
 router.post(
+  '/kyc/aadhaar/send-otp',
+  [body('aadhaarNumber').isString().notEmpty().withMessage('Aadhaar number is required')],
+  validate,
+  profileController.sendProfileAadhaarOtp
+);
+router.post(
+  '/kyc/aadhaar/verify-otp',
+  [body('otp').isString().notEmpty().withMessage('OTP is required')],
+  validate,
+  profileController.verifyProfileAadhaarOtp
+);
+router.post(
   '/kyc',
-  [body('panNumber').optional().isString(), body('aadhaarNumber').optional().isString()],
+  [body('aadhaarNumber').optional().isString()],
   validate,
   profileController.submitKyc
 );

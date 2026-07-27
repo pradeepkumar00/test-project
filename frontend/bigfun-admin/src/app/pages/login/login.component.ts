@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ROUTE_PERMISSIONS } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-login',
@@ -13,7 +14,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="login-card card">
         <div class="logo">
           <div class="brand-mark">B</div>
-          <h1>BIGFUN Admin</h1>
+          <h1>Masti Ludo Admin</h1>
           <p>Sign in to manage the platform</p>
         </div>
         @if (error) { <div class="alert error">{{ error }}</div> }
@@ -84,12 +85,19 @@ export class LoginComponent {
     this.error = '';
     this.loading = true;
     this.auth.login(this.mobile, this.password).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => this.router.navigate([this.firstAllowedPath()]),
       error: (e) => {
         this.error = e.error?.message || 'Login failed';
         this.loading = false;
       },
       complete: () => (this.loading = false),
     });
+  }
+
+  private firstAllowedPath(): string {
+    for (const [path, perm] of Object.entries(ROUTE_PERMISSIONS)) {
+      if (this.auth.hasPermission(perm)) return path;
+    }
+    return '/dashboard';
   }
 }

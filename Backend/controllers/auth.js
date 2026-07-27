@@ -29,6 +29,8 @@ const loginValidation = [
 const otpLoginValidation = [
   body('mobile').matches(/^[6-9]\d{9}$/).withMessage('Valid 10-digit Indian mobile required'),
   body('otp').isLength({ min: 6, max: 6 }).withMessage('Valid 6-digit OTP required'),
+  body('referralCode').optional({ nullable: true, checkFalsy: true }).isString(),
+  body('name').optional({ nullable: true, checkFalsy: true }).trim(),
 ];
 
 const sendOtpHandler = async (req, res, next) => {
@@ -77,7 +79,7 @@ const register = async (req, res, next) => {
     const user = await User.create({
       mobile,
       password,
-      name: name || '',
+      name: name?.trim() || 'Player',
       referralCode: code,
       referredBy: referrer?._id || null,
       isVerified: true,
@@ -144,16 +146,67 @@ const login = async (req, res, next) => {
 
 const loginWithOtp = async (req, res, next) => {
   try {
-    const { mobile, otp } = req.body;
-    const otpResult = await verifyOtp(mobile, otp, 'login');
+    const { mobile, otp, referralCode, name } = req.body;
+    const otpResult = await verifyOtp(mobile, otp, 'login', {
+      allowPurposes: ['login', 'register'],
+    });
 
     if (!otpResult.valid) {
       return res.status(400).json({ success: false, message: otpResult.message });
     }
 
-    const user = await User.findOne({ mobile });
+    let user = await User.findOne({ mobile });
+    let isNewUser = false;
+
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found. Please register first.' });
+      isNewUser = true;
+      let referrer = null;
+      if (referralCode) {
+        referrer = await User.findOne({ referralCode: String(referralCode) });
+      }
+
+      let code;
+      let isUnique = false;
+      while (!isUnique) {
+        code = generateReferralCode();
+        const exists = await User.findOne({ referralCode: code });
+        if (!exists) isUnique = true;
+      }
+
+      const platform = await getPlatformSettings();
+      const referralBonus = platform.referralBonus;
+      const randomPassword = `otp_${mobile}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+      user = await User.create({
+        mobile,
+        password: randomPassword,
+        name: name?.trim() || 'Player',
+        referralCode: code,
+        referredBy: referrer?._id || null,
+        isVerified: true,
+        bonusBalance: referrer ? referralBonus : 0,
+      });
+
+      if (referrer) {
+        referrer.referralCount += 1;
+        referrer.referralEarnings += referralBonus;
+        referrer.bonusBalance += referralBonus;
+        await referrer.save();
+
+        await recordTransaction({
+          userId: referrer._id,
+          type: 'referral_bonus',
+          amount: referralBonus,
+          balanceBefore: referrer.balance,
+          balanceAfter: referrer.balance,
+          description: `Referral bonus for ${mobile}`,
+          metadata: { referredUserId: user._id },
+        });
+      }
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ success: false, message: 'Account is deactivated' });
     }
 
     user.lastLoginAt = new Date();
@@ -162,9 +215,10 @@ const loginWithOtp = async (req, res, next) => {
     const token = generateToken(user._id);
     res.json({
       success: true,
-      message: 'Login successful',
+      message: isNewUser ? 'Account created and login successful' : 'Login successful',
       token,
       user: sanitizeUser(user),
+      isNewUser,
     });
   } catch (error) {
     next(error);

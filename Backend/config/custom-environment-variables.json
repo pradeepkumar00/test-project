@@ -26,6 +26,21 @@
   "otp": {
     "expiryMinutes": "OTP_EXPIRY_MINUTES"
   },
+  "kyc": {
+    "aadhaarOtp": {
+      "enabled": "AADHAAR_KYC_ENABLED",
+      "baseUrl": "AADHAAR_KYC_BASE_URL",
+      "authType": "AADHAAR_KYC_AUTH_TYPE",
+      "token": "AADHAAR_KYC_TOKEN",
+      "apiKey": "AADHAAR_KYC_API_KEY",
+      "apiKeyHeader": "AADHAAR_KYC_API_KEY_HEADER",
+      "username": "AADHAAR_KYC_USERNAME",
+      "password": "AADHAAR_KYC_PASSWORD",
+      "sendOtpPath": "AADHAAR_KYC_SEND_OTP_PATH",
+      "verifyOtpPath": "AADHAAR_KYC_VERIFY_OTP_PATH",
+      "requestTimeoutMs": "AADHAAR_KYC_REQUEST_TIMEOUT_MS"
+    }
+  },
   "logging": {
     "level": "LOG_LEVEL",
     "format": "LOG_FORMAT",
@@ -69,6 +84,7 @@
     "maxEntryFee": "BATTLE_MAX_ENTRY_FEE"
   },
   "currency": "CURRENCY",
-  "currencySymbol": "CURRENCY_SYMBOL",
-  "supportEmail": "SUPPORT_EMAIL"
+  "currencySymbol": "CURRENCY_SYMBOL",  
+  "supportEmail": "SUPPORT_EMAIL",
+  "supportWhatsApp": "SUPPORT_WHATSAPP"
 }

@@ -83,10 +83,17 @@ export class ProfileService {
     );
   }
 
-  submitKyc(panNumber: string, aadhaarNumber: string) {
-    return this.http.post<{ success: boolean; message: string }>(`${environment.apiUrl}/profile/kyc`, {
-      panNumber,
-      aadhaarNumber,
-    });
+  sendAadhaarOtp(aadhaarNumber: string) {
+    return this.http.post<{ success: boolean; message: string; requestId: string; maskedMobile?: string | null }>(
+      `${environment.apiUrl}/profile/kyc/aadhaar/send-otp`,
+      { aadhaarNumber }
+    );
+  }
+
+  verifyAadhaarOtp(otp: string) {
+    return this.http.post<{ success: boolean; message: string; kycStatus: string; verifiedName?: string | null }>(
+      `${environment.apiUrl}/profile/kyc/aadhaar/verify-otp`,
+      { otp }
+    );
   }
 }

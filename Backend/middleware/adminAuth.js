@@ -1,6 +1,7 @@
-const User = require('../models/User');
+const Admin = require('../models/Admin');
 const { verifyAdminToken } = require('../utils/adminToken');
 const { isTokenRevoked } = require('../services/tokenBlacklistService');
+const { hasPermission, hasAnyPermission } = require('../constants/adminPermissions');
 const logger = require('../utils/logger');
 
 const adminAuth = async (req, res, next) => {
@@ -21,12 +22,13 @@ const adminAuth = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Session expired. Please log in again.' });
     }
 
-    const user = await User.findById(decoded.userId);
-    if (!user || !user.isActive || !['admin', 'superadmin'].includes(user.role)) {
+    const adminId = decoded.adminId || decoded.userId;
+    const admin = await Admin.findById(adminId);
+    if (!admin || !admin.isActive || !['admin', 'superadmin'].includes(admin.role)) {
       return res.status(403).json({ success: false, message: 'Admin access denied' });
     }
 
-    req.admin = user;
+    req.admin = admin;
     req.authToken = token;
     next();
   } catch (error) {
@@ -49,4 +51,32 @@ const superAdminOnly = (req, res, next) => {
   next();
 };
 
-module.exports = { adminAuth, superAdminOnly };
+const requirePermission = (...permissions) => (req, res, next) => {
+  const needed = permissions.flat();
+  if (!needed.length || hasAnyPermission(req.admin, needed)) {
+    return next();
+  }
+  return res.status(403).json({
+    success: false,
+    message: 'You do not have permission for this action',
+    required: needed,
+  });
+};
+
+const requireAllPermissions = (...permissions) => (req, res, next) => {
+  const needed = permissions.flat();
+  const ok = needed.every((p) => hasPermission(req.admin, p));
+  if (ok) return next();
+  return res.status(403).json({
+    success: false,
+    message: 'You do not have permission for this action',
+    required: needed,
+  });
+};
+
+module.exports = {
+  adminAuth,
+  superAdminOnly,
+  requirePermission,
+  requireAllPermissions,
+};

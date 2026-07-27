@@ -21,6 +21,7 @@ const getSettings = async (req, res, next) => {
         colorMultipliers: config.get('colorMultipliers'),
         numberMultipliers: config.get('numberMultipliers'),
         supportEmail: platform.supportEmail,
+        supportWhatsApp: platform.supportWhatsApp,
         realtime: getRealtimeSyncConfig(),
       },
     });

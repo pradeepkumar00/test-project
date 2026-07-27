@@ -1,7 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { Admin } from '../../core/models';
+import { AdminPermissionKey } from '../../core/constants/permissions';
+
+interface NavItem {
+  path: string;
+  label: string;
+  permission: AdminPermissionKey;
+}
 
 @Component({
   selector: 'app-admin-layout',
@@ -13,19 +21,19 @@ import { AuthService } from '../../core/services/auth.service';
         <div class="brand">
           <span class="brand-mark">B</span>
           <div>
-            <strong>BIGFUN</strong>
+            <strong>MASTI LUDO</strong>
             <small>Admin Portal</small>
           </div>
         </div>
         <nav>
-          @for (item of navItems; track item.path) {
+          @for (item of visibleNav; track item.path) {
             <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
           }
         </nav>
         <div class="sidebar-footer">
           @if (admin) {
             <div class="admin-info">
-              <strong>{{ admin.name }}</strong>
+              <strong>{{ admin.name || (admin.role === 'superadmin' ? 'Super Admin' : 'Admin') }}</strong>
               <small>{{ admin.mobile }} · {{ admin.role }}</small>
             </div>
           }
@@ -125,21 +133,35 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `],
 })
-export class AdminLayoutComponent {
+export class AdminLayoutComponent implements OnInit {
   private auth = inject(AuthService);
   private router = inject(Router);
-  admin = this.auth.getAdmin();
+  admin: Admin | null = this.auth.getAdmin();
+  visibleNav: NavItem[] = [];
 
-  navItems = [
-    { path: '/dashboard', label: '📊 Dashboard' },
-    { path: '/deposits', label: '💰 Deposits' },
-    { path: '/withdrawals', label: '🏦 Withdrawals' },
-    { path: '/battles', label: '⚔️ Battles' },
-    { path: '/users', label: '👥 Users' },
-    { path: '/kyc', label: '🪪 KYC' },
-    { path: '/transactions', label: '📋 Transactions' },
-    { path: '/settings', label: '⚙️ Settings' },
+  private allNav: NavItem[] = [
+    { path: '/dashboard', label: '📊 Dashboard', permission: 'dashboard.view' },
+    { path: '/deposits', label: '💰 Deposits', permission: 'deposits.view' },
+    { path: '/withdrawals', label: '🏦 Withdrawals', permission: 'withdrawals.view' },
+    { path: '/battles', label: '⚔️ Battles', permission: 'battles.view' },
+    { path: '/users', label: '👥 Users', permission: 'users.view' },
+    { path: '/kyc', label: '🪪 KYC', permission: 'kyc.view' },
+    { path: '/transactions', label: '📋 Transactions', permission: 'transactions.view' },
+    { path: '/settings', label: '⚙️ Settings', permission: 'settings.view' },
   ];
+
+  ngOnInit() {
+    this.auth.admin$.subscribe((a) => {
+      this.admin = a;
+      this.refreshNav();
+    });
+    this.auth.fetchProfile().subscribe({ error: () => this.refreshNav() });
+    this.refreshNav();
+  }
+
+  private refreshNav() {
+    this.visibleNav = this.allNav.filter((item) => this.auth.hasPermission(item.permission));
+  }
 
   logout() {
     this.auth.logout().subscribe(() => this.router.navigate(['/login']));

@@ -12,6 +12,8 @@ import {
   Transaction,
   User,
   Withdrawal,
+  Admin,
+  AdminPermission,
 } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -139,6 +141,33 @@ export class AdminApiService {
     return this.http.put<{ success: boolean; message: string; settings: PlatformSettings }>(
       `${this.base}/settings`,
       settings
+    );
+  }
+
+  getPermissionCatalog() {
+    return this.http.get<{ success: boolean; permissions: AdminPermission[] }>(
+      `${this.base}/permissions`
+    );
+  }
+
+  getAdmins() {
+    return this.http.get<{ success: boolean; admins: Admin[] }>(`${this.base}/admins`);
+  }
+
+  createAdmin(data: { mobile: string; password: string; name?: string; permissions: string[] }) {
+    return this.http.post<{ success: boolean; message: string; admin: Admin }>(
+      `${this.base}/admins`,
+      data
+    );
+  }
+
+  updateAdmin(
+    id: string,
+    data: Partial<{ name: string; permissions: string[]; isActive: boolean; password: string }>
+  ) {
+    return this.http.put<{ success: boolean; message: string; admin: Admin }>(
+      `${this.base}/admins/${id}`,
+      data
     );
   }
 }

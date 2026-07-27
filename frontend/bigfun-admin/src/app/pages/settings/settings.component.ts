@@ -2,6 +2,7 @@ import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminApiService } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
 import { formatMethodSelection, getPaymentMethodLogo } from '../../core/constants/payment-methods';
 import { CurrencyOption, PlatformSettings } from '../../core/models';
 
@@ -83,6 +84,19 @@ type SettingsForm = Omit<
               />
               @if (fieldErrors['supportEmail']) {
                 <small class="field-error">{{ fieldErrors['supportEmail'] }}</small>
+              }
+            </label>
+            <label>
+              <span>Support WhatsApp</span>
+              <input
+                [(ngModel)]="form.supportWhatsApp"
+                name="supportWhatsApp"
+                required
+                placeholder="919876543210"
+                [class.input-error]="fieldErrors['supportWhatsApp']"
+              />
+              @if (fieldErrors['supportWhatsApp']) {
+                <small class="field-error">{{ fieldErrors['supportWhatsApp'] }}</small>
               }
             </label>
           </div>
@@ -298,10 +312,16 @@ type SettingsForm = Omit<
           <div class="alert alert-success">{{ success }}</div>
         }
 
+        @if (!canManage) {
+          <div class="alert alert-error">You have view-only access. Ask a superadmin to grant Edit settings.</div>
+        }
+
         <div class="actions">
-          <button type="submit" class="btn btn-primary" [disabled]="saving">
-            {{ saving ? 'Saving...' : 'Save Settings' }}
-          </button>
+          @if (canManage) {
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              {{ saving ? 'Saving...' : 'Save Settings' }}
+            </button>
+          }
         </div>
       </form>
     }
@@ -491,11 +511,13 @@ type SettingsForm = Omit<
 })
 export class SettingsComponent implements OnInit {
   private api = inject(AdminApiService);
+  private auth = inject(AuthService);
 
   loading = true;
   saving = false;
   error = '';
   success = '';
+  canManage = this.auth.hasPermission('settings.manage');
   currencies: CurrencyOption[] = [];
   paymentMethodOptions: string[] = [];
   withdrawMethodOptions: string[] = [];
@@ -514,6 +536,7 @@ export class SettingsComponent implements OnInit {
     referralBonus: 50,
     currency: 'INR',
     supportEmail: '',
+    supportWhatsApp: '',
     paymentMethods: [],
     withdrawMethods: [],
   };
@@ -594,6 +617,7 @@ export class SettingsComponent implements OnInit {
           referralBonus: settings.referralBonus,
           currency: settings.currency,
           supportEmail: settings.supportEmail,
+          supportWhatsApp: settings.supportWhatsApp || '',
           paymentMethods: [...settings.paymentMethods],
           withdrawMethods: [...settings.withdrawMethods],
         };
@@ -607,6 +631,7 @@ export class SettingsComponent implements OnInit {
   }
 
   save() {
+    if (!this.canManage) return;
     this.error = '';
     this.success = '';
     this.fieldErrors = {};
@@ -664,6 +689,15 @@ export class SettingsComponent implements OnInit {
       this.fieldErrors['supportEmail'] = 'Support email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.form.supportEmail.trim())) {
       this.fieldErrors['supportEmail'] = 'Enter a valid support email address';
+    }
+
+    const whatsapp = String(this.form.supportWhatsApp || '').replace(/\D/g, '');
+    if (!whatsapp) {
+      this.fieldErrors['supportWhatsApp'] = 'Support WhatsApp number is required';
+    } else if (!/^[1-9]\d{9,14}$/.test(whatsapp)) {
+      this.fieldErrors['supportWhatsApp'] = 'Enter WhatsApp with country code (e.g. 919876543210)';
+    } else {
+      this.form.supportWhatsApp = whatsapp;
     }
 
     if (this.form.minEntryFee == null) {

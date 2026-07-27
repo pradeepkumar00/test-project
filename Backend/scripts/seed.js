@@ -65,19 +65,21 @@ const seed = async () => {
   }
 
   const adminMobile = '9999999999';
-  let adminUser = await User.findOne({ mobile: adminMobile });
+  const Admin = require('../models/Admin');
+  let adminUser = await Admin.findOne({ mobile: adminMobile });
   if (!adminUser) {
-    adminUser = await User.create({
+    adminUser = await Admin.create({
       mobile: adminMobile,
       password: 'admin123',
       name: 'Super Admin',
-      referralCode: '100001',
       role: 'superadmin',
-      isVerified: true,
+      permissions: [],
+      isActive: true,
     });
     console.log(`Created superadmin: ${adminMobile} / admin123`);
   } else if (adminUser.role !== 'superadmin') {
     adminUser.role = 'superadmin';
+    adminUser.permissions = [];
     await adminUser.save();
     console.log('Updated existing admin to superadmin role');
   } else {

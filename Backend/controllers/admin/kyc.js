@@ -3,8 +3,7 @@ const User = require('../../models/User');
 const listPendingKyc = async (req, res, next) => {
   try {
     const users = await User.find({
-      role: 'user',
-      'kyc.panNumber': { $exists: true, $ne: '' },
+      'kyc.aadhaarNumber': { $exists: true, $ne: '' },
       'kyc.isVerified': false,
     })
       .select('name mobile kyc createdAt')

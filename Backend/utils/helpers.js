@@ -34,7 +34,7 @@ const generatePeriod = (gameSlug, startTime) => {
 const sanitizeUser = (user) => ({
   id: user._id.toString(),
   mobile: user.mobile,
-  name: user.name,
+  name: user.name?.trim() || 'Player',
   referralCode: user.referralCode,
   balance: user.balance,
   bonusBalance: user.bonusBalance,
@@ -47,6 +47,9 @@ const sanitizeUser = (user) => ({
   income: user.income || 0,
   gamesPlayed: user.gamesPlayed || 0,
   gamesWon: user.gamesWon || 0,
+  gamesLost: user.gamesLost || 0,
+  totalWon: user.totalWon || 0,
+  totalLost: user.totalLost || 0,
   totalDeposited: user.totalDeposited,
   totalWithdrawn: user.totalWithdrawn,
   createdAt: user.createdAt,

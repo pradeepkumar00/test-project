@@ -5,12 +5,18 @@ const { recordTransaction } = require('./paymentService');
 const { publishWalletUpdate } = require('./firebaseService');
 const { formatBattle } = require('./battleService');
 
-const refundUser = async (userId, amount, battleId, reason) => {
+const refundUser = async (userId, amount, battleId, reason, split = null) => {
   const user = await User.findById(userId);
   if (!user) return;
 
+  const fromBonus = Math.min(Number(split?.fromBonus) || 0, amount);
+  const fromMain = Math.max(0, amount - fromBonus);
+
   const balanceBefore = user.balance;
-  user.balance += amount;
+  const bonusBefore = user.bonusBalance;
+
+  user.balance = Math.round((user.balance + fromMain) * 100) / 100;
+  user.bonusBalance = Math.round((user.bonusBalance + fromBonus) * 100) / 100;
   await user.save();
 
   await recordTransaction({
@@ -21,7 +27,14 @@ const refundUser = async (userId, amount, battleId, reason) => {
     balanceAfter: user.balance,
     referenceId: battleId.toString(),
     description: reason,
-    metadata: { battleId, action: 'admin_refund' },
+    metadata: {
+      battleId,
+      action: 'admin_refund',
+      fromBonus,
+      fromMain,
+      bonusBefore,
+      bonusAfter: user.bonusBalance,
+    },
   });
 
   await publishWalletUpdate(user, 'battle_refund');
@@ -36,12 +49,30 @@ const cancelBattle = async (battleId, reason = 'Cancelled by admin') => {
   }
 
   if (battle.status === 'open') {
-    await refundUser(battle.creator, battle.entryFee, battle._id, `${reason} - creator refund`);
+    await refundUser(
+      battle.creator,
+      battle.entryFee,
+      battle._id,
+      `${reason} - creator refund`,
+      battle.creatorDeduction
+    );
   }
 
   if (battle.status === 'running') {
-    await refundUser(battle.creator, battle.entryFee, battle._id, `${reason} - creator refund`);
-    await refundUser(battle.joiner, battle.entryFee, battle._id, `${reason} - joiner refund`);
+    await refundUser(
+      battle.creator,
+      battle.entryFee,
+      battle._id,
+      `${reason} - creator refund`,
+      battle.creatorDeduction
+    );
+    await refundUser(
+      battle.joiner,
+      battle.entryFee,
+      battle._id,
+      `${reason} - joiner refund`,
+      battle.joinerDeduction
+    );
   }
 
   battle.status = 'cancelled';

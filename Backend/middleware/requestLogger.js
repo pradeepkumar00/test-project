@@ -99,7 +99,7 @@ const getRequestActor = (req) => {
       actorType: 'user',
       actorId: req.user._id?.toString(),
       actorMobile: req.user.mobile,
-      actorRole: req.user.role,
+      actorRole: 'user',
     };
   }
 

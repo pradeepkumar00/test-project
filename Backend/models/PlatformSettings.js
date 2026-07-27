@@ -14,9 +14,10 @@ const platformSettingsSchema = new mongoose.Schema(
     currency: { type: String, required: true, trim: true, uppercase: true },
     currencySymbol: { type: String, required: true, trim: true },
     supportEmail: { type: String, required: true, trim: true, lowercase: true },
+    supportWhatsApp: { type: String, required: true, trim: true, default: '' },
     paymentMethods: { type: [String], required: true, default: [] },
     withdrawMethods: { type: [String], required: true, default: [] },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
   },
   { timestamps: true, _id: false }
 );

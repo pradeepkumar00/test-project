@@ -80,6 +80,10 @@ const updateSettingsValidation = [
     .isIn(supportedCurrencyCodes)
     .withMessage(`Currency must be one of: ${supportedCurrencyCodes.join(', ')}`),
   body('supportEmail').trim().isEmail().withMessage('Enter a valid support email address'),
+  body('supportWhatsApp')
+    .trim()
+    .matches(/^[1-9]\d{9,14}$/)
+    .withMessage('Enter WhatsApp number with country code (digits only, e.g. 919876543210)'),
   body('paymentMethods').custom((value) => {
     if (!Array.isArray(value) || value.length === 0) {
       throw new Error('Select at least one payment method');
@@ -134,6 +138,7 @@ const updateSettings = async (req, res, next) => {
       referralBonus,
       currency,
       supportEmail,
+      supportWhatsApp,
       paymentMethods,
       withdrawMethods,
     } = req.body;
@@ -150,6 +155,7 @@ const updateSettings = async (req, res, next) => {
         referralBonus: Number(referralBonus),
         currency,
         supportEmail,
+        supportWhatsApp: String(supportWhatsApp).replace(/\D/g, ''),
         paymentMethods: paymentMethods.map((m) => String(m).trim()),
         withdrawMethods: withdrawMethods.map((m) => String(m).trim()),
       },

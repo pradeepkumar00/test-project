@@ -19,7 +19,7 @@ const getDashboard = async (req, res, next) => {
       Withdraw.countDocuments({ status: 'pending' }),
       Battle.countDocuments({ status: 'open' }),
       Battle.countDocuments({ status: 'running' }),
-      User.countDocuments({ role: 'user' }),
+      User.countDocuments(),
       Deposit.countDocuments({ status: { $in: ['approved', 'completed'] } }),
       Withdraw.countDocuments({ status: 'completed' }),
     ]);

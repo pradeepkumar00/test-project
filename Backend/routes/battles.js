@@ -12,6 +12,8 @@ router.use(auth);
 router.post('/', battlesController.createBattleValidation, validate, battlesController.createBattleHandler);
 router.get('/open', battlesController.getOpenBattles);
 router.get('/running', battlesController.getRunningBattles);
+router.get('/challenges', battlesController.getChallenges);
+router.get('/leaderboard', battlesController.getLeaderboard);
 router.get('/my', battlesController.getMyBattles);
 router.post('/:id/join', battlesController.joinBattleHandler);
 router.post('/:id/complete', battlesController.completeBattleHandler);

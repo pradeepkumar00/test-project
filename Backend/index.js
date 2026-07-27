@@ -45,10 +45,11 @@ const start = async () => {
   });
 
   app.listen(port, () => {
-    logger.info('BigFun API started', {
+    logger.info('Masti Ludo API started', {
       port,
       healthCheck: `http://localhost:${port}/api/health`,
       adminApi: `http://localhost:${port}/api/admin`,
+      superadminApi: `http://localhost:${port}/api/superadmin`,
     });
   });
 };

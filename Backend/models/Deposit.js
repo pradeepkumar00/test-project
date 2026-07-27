@@ -13,7 +13,7 @@ const depositSchema = new mongoose.Schema(
       index: true,
     },
     orderId: { type: String, unique: true, required: true },
-    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
     reviewedAt: Date,
     rejectReason: String,
     completedAt: Date,

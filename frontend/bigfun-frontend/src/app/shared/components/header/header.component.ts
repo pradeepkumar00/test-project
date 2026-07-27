@@ -11,8 +11,8 @@ import { User } from '../../../core/models';
   template: `
     <header class="header">
       <a routerLink="/home" class="logo">
-        <span class="logo-mark">B</span>
-        <span class="logo-text">BIGFUN</span>
+        <span class="logo-mark">M</span>
+        <span class="logo-text">MASTI LUDO</span>
       </a>
       @if (auth.getUser(); as user) {
         <div class="stats">

@@ -16,6 +16,7 @@ const sendOtp = async (mobile, purpose = 'login') => {
   await redis.set(key, otp, 'EX', ttlSeconds);
 
   try {
+    console.log('Sending OTP to', mobile, otp, purpose);
     await sendOtpSms(mobile, otp, purpose);
   } catch (error) {
     await redis.del(key);

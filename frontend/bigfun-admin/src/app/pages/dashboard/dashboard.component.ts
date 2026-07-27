@@ -2,7 +2,9 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AdminApiService } from '../../core/services/admin.service';
+import { AuthService } from '../../core/services/auth.service';
 import { DashboardStats } from '../../core/models';
+import { AdminPermissionKey } from '../../core/constants/permissions';
 
 @Component({
   selector: 'app-dashboard',
@@ -49,31 +51,20 @@ import { DashboardStats } from '../../core/models';
         </div>
       </div>
 
-      <div class="quick-links">
-        <h2>Quick Actions</h2>
-        <div class="links">
-          <a routerLink="/deposits" class="card link-card">
-            <span class="link-icon">💰</span>
-            <span>Review Deposits</span>
-            <span class="arrow">→</span>
-          </a>
-          <a routerLink="/withdrawals" class="card link-card">
-            <span class="link-icon">🏦</span>
-            <span>Review Withdrawals</span>
-            <span class="arrow">→</span>
-          </a>
-          <a routerLink="/battles" class="card link-card">
-            <span class="link-icon">⚔️</span>
-            <span>Manage Battles</span>
-            <span class="arrow">→</span>
-          </a>
-          <a routerLink="/kyc" class="card link-card">
-            <span class="link-icon">🪪</span>
-            <span>Pending KYC</span>
-            <span class="arrow">→</span>
-          </a>
+      @if (quickActions.length) {
+        <div class="quick-links">
+          <h2>Quick Actions</h2>
+          <div class="links">
+            @for (action of quickActions; track action.path) {
+              <a [routerLink]="action.path" class="card link-card">
+                <span class="link-icon">{{ action.icon }}</span>
+                <span>{{ action.label }}</span>
+                <span class="arrow">→</span>
+              </a>
+            }
+          </div>
         </div>
-      </div>
+      }
     }
   `,
   styles: [`
@@ -107,10 +98,25 @@ import { DashboardStats } from '../../core/models';
 })
 export class DashboardComponent implements OnInit {
   private api = inject(AdminApiService);
+  private auth = inject(AuthService);
   stats: DashboardStats | null = null;
   loading = true;
+  quickActions: { path: string; label: string; icon: string }[] = [];
+
+  private readonly allQuickActions: {
+    path: string;
+    label: string;
+    icon: string;
+    permission: AdminPermissionKey;
+  }[] = [
+    { path: '/deposits', label: 'Review Deposits', icon: '💰', permission: 'deposits.view' },
+    { path: '/withdrawals', label: 'Review Withdrawals', icon: '🏦', permission: 'withdrawals.view' },
+    { path: '/battles', label: 'Manage Battles', icon: '⚔️', permission: 'battles.view' },
+    { path: '/kyc', label: 'Pending KYC', icon: '🪪', permission: 'kyc.view' },
+  ];
 
   ngOnInit() {
+    this.quickActions = this.allQuickActions.filter((a) => this.auth.hasPermission(a.permission));
     this.api.getDashboard().subscribe({
       next: (res) => {
         this.stats = res.stats;

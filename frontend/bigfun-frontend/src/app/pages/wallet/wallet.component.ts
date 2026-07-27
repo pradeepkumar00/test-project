@@ -13,203 +13,240 @@ import { DepositQr, PaymentDetails, WalletDeposit, WalletWithdrawal } from '../.
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="page">
-      <h2 class="section-title">Wallet</h2>
+    <div class="page balance-page">
+      <div class="panel">
+        <h2>My Balance</h2>
+        <p class="sub">Manage your funds and winnings</p>
 
-      <div class="tabs">
-        <button [class.active]="tab === 'deposit'" (click)="tab = 'deposit'">Add Money</button>
-        <button [class.active]="tab === 'withdraw'" (click)="tab = 'withdraw'">Withdraw</button>
+        <div class="total-box">
+          <span>TOTAL BALANCE</span>
+          <strong>₹{{ totalBalance | number:'1.0-2' }}</strong>
+        </div>
+
+        <div class="fund-card deposit">
+          <div class="fund-left">
+            <div class="fund-icon deposit-ico">💰</div>
+            <div>
+              <small>Deposit Cash</small>
+              <strong>₹{{ depositedCash | number:'1.0-2' }}</strong>
+            </div>
+          </div>
+          <button type="button" class="add-btn" (click)="openPanel('deposit')">+ Add Cash</button>
+        </div>
+
+        <div class="fund-card winning">
+          <div class="fund-left">
+            <div class="fund-icon win-ico">🏆</div>
+            <div>
+              <small>Winning Cash</small>
+              <strong>₹{{ winningCash | number:'1.0-2' }}</strong>
+            </div>
+          </div>
+          <button type="button" class="withdraw-btn" (click)="openPanel('withdraw')">Withdraw</button>
+        </div>
       </div>
 
-      @if (tab === 'deposit') {
-        <p class="sub">{{ payment?.instructions || 'Enter amount, generate QR, pay, then submit transaction ID.' }}</p>
+      @if (activePanel) {
+        <div class="sheet-backdrop" (click)="closePanel()"></div>
+        <div class="sheet">
+          <div class="sheet-head">
+            <h3>{{ activePanel === 'deposit' ? 'Add Cash' : 'Withdraw' }}</h3>
+            <button type="button" class="close" (click)="closePanel()">✕</button>
+          </div>
 
-        <div class="deposit-layout">
-          <div class="deposit-form card">
+          @if (activePanel === 'deposit') {
+            <p class="hint">{{ payment?.instructions || 'Enter amount, generate QR, pay, then submit UTR.' }}</p>
             <div class="form-group">
               <label>Enter Amount (min ₹{{ payment?.minDeposit || 100 }})</label>
-              <input
-                type="number"
-                [(ngModel)]="amount"
-                (ngModelChange)="onAmountChange()"
-                placeholder="e.g. 500"
-                [disabled]="generatingQr"
-              />
+              <input type="number" [(ngModel)]="amount" (ngModelChange)="onAmountChange()" [disabled]="generatingQr" />
             </div>
-            <button
-              class="btn btn-primary btn-block"
-              [disabled]="generatingQr || amount < (payment?.minDeposit || 100)"
-              (click)="generateQr()"
-            >
-              {{ generatingQr ? 'Generating QR...' : 'Add & Generate QR' }}
+            <button class="btn-primary" [disabled]="generatingQr || amount < (payment?.minDeposit || 100)" (click)="generateQr()">
+              {{ generatingQr ? 'Generating QR...' : 'Generate QR' }}
             </button>
 
             @if (depositQr) {
-              <div class="qr-panel">
-                <p class="qr-amount">Pay exactly <strong>₹{{ depositQr.amount | number:'1.2-2' }}</strong></p>
-                <img [src]="depositQr.qrDataUrl" alt="UPI QR Code" class="qr-image" />
-                <p class="qr-note">Scan with PhonePe, GPay, Paytm or any UPI app</p>
-                <p class="upi-id">UPI: {{ depositQr.upiId }}</p>
-                <p class="order-id">Ref: {{ depositQr.orderId }}</p>
-                <button class="btn btn-outline btn-block" (click)="copyUpi()">Copy UPI ID</button>
-                <p class="expiry">QR valid for {{ depositQr.expiresInMinutes }} minutes</p>
+              <div class="qr-box">
+                <p>Pay exactly <strong>₹{{ depositQr.amount | number:'1.2-2' }}</strong></p>
+                <img [src]="depositQr.qrDataUrl" alt="UPI QR" />
+                <p class="muted">UPI: {{ depositQr.upiId }}</p>
+                <button class="btn-outline" (click)="copyUpi()">Copy UPI ID</button>
+              </div>
+              <div class="form-group">
+                <label>Transaction ID / UTR</label>
+                <input type="text" [(ngModel)]="utrNumber" placeholder="12-digit UTR" />
+              </div>
+              <button class="btn-primary" [disabled]="submitting || !utrNumber.trim()" (click)="submitDeposit()">
+                {{ submitting ? 'Submitting...' : 'Submit Deposit' }}
+              </button>
+            }
+
+            <h4 class="list-title">Recent Deposits</h4>
+            @for (d of deposits; track d._id) {
+              <div class="row-item">
+                <div>
+                  <strong>₹{{ d.amount }}</strong>
+                  <small>{{ d.createdAt | date:'medium' }}</small>
+                  @if (d.status === 'rejected' && d.rejectReason) {
+                    <small class="reject">{{ d.rejectReason }}</small>
+                  }
+                </div>
+                <span class="status" [ngClass]="d.status">{{ d.status }}</span>
               </div>
             }
-          </div>
-
-          <div class="deposit-form card">
-            <h3 class="step-title">After Payment</h3>
+          } @else {
+            <p class="hint">Minimum withdrawal ₹{{ minWithdraw }}.</p>
             <div class="form-group">
-              <label>Transaction ID / UTR Number</label>
-              <input
-                type="text"
-                [(ngModel)]="utrNumber"
-                placeholder="12-digit UTR from payment app"
-                [disabled]="!depositQr"
-              />
+              <label>Withdraw Amount</label>
+              <input type="number" [(ngModel)]="withdrawAmount" [min]="minWithdraw" />
             </div>
-            <button
-              class="btn btn-gold btn-block"
-              [disabled]="submitting || !depositQr || !utrNumber.trim()"
-              (click)="submitDeposit()"
-            >
-              {{ submitting ? 'Submitting...' : 'Submit Deposit Request' }}
+            <div class="form-group">
+              <label>Method</label>
+              <select [(ngModel)]="withdrawMethod">
+                <option value="UPI">UPI</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>UPI ID</label>
+              <input type="text" [(ngModel)]="upiId" placeholder="yourname@upi" />
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" [(ngModel)]="withdrawPassword" placeholder="Confirm with password" />
+            </div>
+            <button class="btn-primary green" [disabled]="withdrawing" (click)="submitWithdraw()">
+              {{ withdrawing ? 'Submitting...' : 'Request Withdrawal' }}
             </button>
-            <p class="hint">Your request will be sent to admin for verification</p>
-          </div>
-        </div>
 
-        <h3 class="section-title mt">Recent Deposits</h3>
-        @for (d of deposits; track d._id) {
-          <div class="deposit-item card">
-            <div class="deposit-info">
-              <strong>₹{{ d.amount }}</strong>
-              @if (d.orderId) { <small class="ref"> · {{ d.orderId }}</small> }
-              <small class="date">{{ d.createdAt | date:'medium' }}</small>
-              @if (d.status === 'rejected' && d.rejectReason) {
-                <small class="reject-reason">Reason: {{ d.rejectReason }}</small>
-              }
-            </div>
-            <span class="status" [ngClass]="d.status">{{ d.status }}</span>
-          </div>
-        }
+            <h4 class="list-title">Recent Withdrawals</h4>
+            @for (w of withdrawals; track w._id) {
+              <div class="row-item">
+                <div>
+                  <strong>₹{{ w.amount }}</strong>
+                  <small>{{ w.method }} · {{ w.createdAt | date:'medium' }}</small>
+                  @if (w.status === 'rejected' && w.rejectReason) {
+                    <small class="reject">{{ w.rejectReason }}</small>
+                  }
+                </div>
+                <span class="status" [ngClass]="w.status">{{ w.status }}</span>
+              </div>
+            }
+          }
+
+          @if (error) { <div class="alert error">{{ error }}</div> }
+          @if (message) { <div class="alert success">{{ message }}</div> }
+        </div>
       }
-
-      @if (tab === 'withdraw') {
-        <p class="sub">Minimum withdrawal ₹{{ minWithdraw }}. Amount will be sent after admin approval.</p>
-        <div class="form-group">
-          <label>Withdraw Amount</label>
-          <input type="number" [(ngModel)]="withdrawAmount" [min]="minWithdraw" placeholder="Amount" />
-        </div>
-        <div class="form-group">
-          <label>Method</label>
-          <select [(ngModel)]="withdrawMethod">
-            <option value="UPI">UPI</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>UPI ID</label>
-          <input type="text" [(ngModel)]="upiId" placeholder="yourname@upi" />
-        </div>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" [(ngModel)]="withdrawPassword" placeholder="Confirm with password" />
-        </div>
-        <button class="btn btn-gold btn-block" [disabled]="withdrawing" (click)="submitWithdraw()">
-          {{ withdrawing ? 'Submitting...' : 'Request Withdrawal' }}
-        </button>
-
-        <h3 class="section-title mt">Recent Withdrawals</h3>
-        @if (!withdrawals.length) {
-          <p class="empty-note">No withdrawal requests yet.</p>
-        }
-        @for (w of withdrawals; track w._id) {
-          <div class="deposit-item card">
-            <div class="deposit-info">
-              <strong>₹{{ w.amount }}</strong>
-              <small class="ref">{{ w.method }}</small>
-              <small class="date">{{ w.createdAt | date:'medium' }}</small>
-              @if (w.status === 'rejected' && w.rejectReason) {
-                <small class="reject-reason">Reason: {{ w.rejectReason }}</small>
-              }
-            </div>
-            <span class="status" [ngClass]="w.status">{{ w.status }}</span>
-          </div>
-        }
-      }
-
-      @if (error) { <div class="alert error">{{ error }}</div> }
-      @if (message) { <div class="alert success">{{ message }}</div> }
     </div>
   `,
   styles: [`
-    .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-    .tabs button {
-      flex: 1; padding: 14px; border: 1px solid var(--border); border-radius: 12px;
-      background: var(--bg-card); color: var(--text-muted); cursor: pointer; font-weight: 600; font-size: 15px;
+    .balance-page { padding-top: 4px; }
+    .panel {
+      background: #fff;
+      color: #111;
+      border-radius: 22px;
+      padding: 20px 16px 22px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
     }
-    .tabs button.active { border-color: var(--primary); color: var(--primary-light); background: rgba(124, 58, 237, 0.12); }
-    .sub { color: var(--text-muted); font-size: 15px; margin-bottom: 20px; line-height: 1.5; }
-    .deposit-layout {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      margin-bottom: 24px;
-    }
-    @media (min-width: 768px) {
-      .deposit-layout { grid-template-columns: 1fr 1fr; align-items: start; }
-    }
-    .step-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-    .qr-panel {
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 1px solid var(--border);
+    .panel h2 { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+    .sub { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+
+    .total-box {
+      background: #f3f4f6;
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
       text-align: center;
     }
-    .qr-amount { font-size: 15px; margin-bottom: 12px; color: var(--text-muted); }
-    .qr-amount strong { color: var(--gold); font-size: 22px; }
-    .qr-image {
-      width: 220px;
-      height: 220px;
-      border-radius: 14px;
-      background: #fff;
-      padding: 10px;
-      margin: 0 auto 12px;
+    .total-box span {
       display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      margin-bottom: 4px;
     }
-    .qr-note { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
-    .upi-id { font-size: 14px; margin: 8px 0; word-break: break-all; }
-    .order-id { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; }
-    .expiry { font-size: 12px; color: var(--secondary); margin-top: 10px; }
-    .hint { font-size: 13px; color: var(--text-muted); margin-top: 12px; text-align: center; }
-    .mt { margin-top: 28px; }
-    .deposit-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 15px; }
-    .deposit-info { display: flex; flex-direction: column; gap: 4px; }
-    .ref { color: var(--text-muted); font-size: 12px; }
-    .date { color: var(--text-muted); font-size: 12px; }
-    .reject-reason { color: #fda4af; font-size: 12px; line-height: 1.4; }
-    .empty-note { color: var(--text-muted); font-size: 14px; margin-bottom: 12px; }
-    .status { font-size: 13px; text-transform: capitalize; }
-    .status.pending { color: var(--gold); }
-    .status.approved { color: var(--success); }
-    .status.completed { color: var(--success); }
-    .status.rejected { color: var(--danger); }
+    .total-box strong { font-size: 32px; color: #16a34a; font-weight: 800; }
 
-    @media (max-width: 768px) {
-      .tabs button { padding: 12px 10px; font-size: 14px; }
-      .sub { font-size: 14px; }
-      .qr-image {
-        width: min(220px, 100%);
-        height: auto;
-        aspect-ratio: 1;
-      }
-      .deposit-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
-      }
+    .fund-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #eef6ff;
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
     }
+    .fund-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .fund-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; background: #fff;
+    }
+    .fund-left small { display: block; color: #64748b; font-size: 12px; font-weight: 600; }
+    .fund-left strong { font-size: 22px; font-weight: 800; color: #0f172a; }
+
+    .add-btn, .withdraw-btn {
+      border: none; border-radius: 999px; padding: 10px 14px;
+      font-weight: 800; font-size: 13px; cursor: pointer; white-space: nowrap;
+      font-family: inherit;
+    }
+    .add-btn { background: #7c3aed; color: #fff; }
+    .withdraw-btn { background: #22c55e; color: #fff; }
+
+    .sheet-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
+    }
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 310;
+      max-height: 85vh; overflow: auto;
+      background: #12081f; color: #fff;
+      border-radius: 20px 20px 0 0;
+      padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+      border-top: 1px solid rgba(34,211,238,0.25);
+    }
+    .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .sheet-head h3 { font-size: 18px; }
+    .close {
+      width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);
+      background: transparent; color: #fff; cursor: pointer;
+    }
+    .hint { color: #a3a3b8; font-size: 13px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; color: #c4b5fd; margin-bottom: 6px; font-weight: 700; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(34,211,238,0.3);
+      background: #0a0614; color: #fff; font-family: inherit;
+    }
+    .btn-primary, .btn-outline {
+      width: 100%; border: none; border-radius: 12px; padding: 12px; font-weight: 800;
+      cursor: pointer; font-family: inherit; margin-bottom: 10px;
+    }
+    .btn-primary { background: linear-gradient(90deg, #7c3aed, #22d3ee); color: #fff; }
+    .btn-primary.green { background: #22c55e; color: #041016; }
+    .btn-outline { background: transparent; border: 1px solid rgba(34,211,238,0.4); color: #67e8f9; }
+    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .qr-box { text-align: center; margin: 12px 0; }
+    .qr-box img { width: 200px; height: 200px; background: #fff; border-radius: 12px; padding: 8px; }
+    .muted { color: #a3a3b8; font-size: 12px; margin: 8px 0; }
+
+    .list-title { margin: 16px 0 8px; font-size: 14px; color: #c4b5fd; }
+    .row-item {
+      display: flex; justify-content: space-between; gap: 10px;
+      padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04);
+      margin-bottom: 8px; font-size: 13px;
+    }
+    .row-item small { display: block; color: #94a3b8; margin-top: 2px; }
+    .reject { color: #fda4af !important; }
+    .status { text-transform: capitalize; font-weight: 700; }
+    .status.pending { color: #facc15; }
+    .status.approved, .status.completed { color: #4ade80; }
+    .status.rejected { color: #f87171; }
+    .alert { padding: 10px 12px; border-radius: 10px; margin-top: 10px; font-size: 13px; }
+    .alert.error { background: rgba(239,68,68,0.15); color: #fda4af; }
+    .alert.success { background: rgba(34,197,94,0.15); color: #86efac; }
   `],
 })
 export class WalletComponent implements OnInit, OnDestroy {
@@ -218,8 +255,9 @@ export class WalletComponent implements OnInit, OnDestroy {
   private auth = inject(AuthService);
   private walletSync = inject(WalletSyncService);
   private walletSub?: Subscription;
+  private userSub?: Subscription;
 
-  tab: 'deposit' | 'withdraw' = 'deposit';
+  activePanel: 'deposit' | 'withdraw' | null = null;
   payment: PaymentDetails | null = null;
   depositQr: DepositQr | null = null;
   amount = 500;
@@ -236,17 +274,23 @@ export class WalletComponent implements OnInit, OnDestroy {
   message = '';
   deposits: WalletDeposit[] = [];
   withdrawals: WalletWithdrawal[] = [];
+  depositedCash = 0;
+  winningCash = 0;
+  totalBalance = 0;
 
   ngOnInit() {
-    this.walletService.getPaymentDetails().subscribe({
-      next: (r) => (this.payment = r.payment),
+    this.userSub = this.auth.user$.subscribe((u) => {
+      this.depositedCash = u?.balance ?? 0;
+      this.winningCash = u?.income ?? u?.bonusBalance ?? 0;
+      this.totalBalance = this.depositedCash + (u?.bonusBalance ?? 0);
+      if (u?.bankDetails?.upiId && !this.upiId) this.upiId = u.bankDetails.upiId;
     });
+
+    this.walletService.getPaymentDetails().subscribe({ next: (r) => (this.payment = r.payment) });
     this.settingsService.getSettings().subscribe({
       next: (r) => {
         this.minWithdraw = r.settings.minWithdraw;
-        if (this.withdrawAmount < this.minWithdraw) {
-          this.withdrawAmount = this.minWithdraw;
-        }
+        if (this.withdrawAmount < this.minWithdraw) this.withdrawAmount = this.minWithdraw;
       },
     });
     this.loadDeposits();
@@ -256,15 +300,24 @@ export class WalletComponent implements OnInit, OnDestroy {
       if (update.reason === 'deposit_approved' || update.reason === 'balance_sync') {
         this.loadDeposits();
         this.loadWithdrawals();
-        if (update.reason === 'deposit_approved') {
-          this.message = 'Deposit approved! Wallet balance updated.';
-        }
+        if (update.reason === 'deposit_approved') this.message = 'Deposit approved! Wallet updated.';
       }
     });
   }
 
   ngOnDestroy() {
     this.walletSub?.unsubscribe();
+    this.userSub?.unsubscribe();
+  }
+
+  openPanel(panel: 'deposit' | 'withdraw') {
+    this.activePanel = panel;
+    this.error = '';
+    this.message = '';
+  }
+
+  closePanel() {
+    this.activePanel = null;
   }
 
   onAmountChange() {
@@ -277,13 +330,12 @@ export class WalletComponent implements OnInit, OnDestroy {
     this.message = '';
     this.generatingQr = true;
     this.depositQr = null;
-
     this.walletService.generateDepositQr(this.amount).subscribe({
       next: (r) => {
         this.depositQr = r.depositQr;
         this.amount = r.depositQr.amount;
         this.generatingQr = false;
-        this.message = `QR generated for ₹${r.depositQr.amount}. Scan and pay the exact amount.`;
+        this.message = `QR generated for ₹${r.depositQr.amount}`;
       },
       error: (e) => {
         this.error = e.error?.message || 'Failed to generate QR';
@@ -293,15 +345,11 @@ export class WalletComponent implements OnInit, OnDestroy {
   }
 
   loadDeposits() {
-    this.walletService.getDeposits().subscribe({
-      next: (r) => (this.deposits = r.deposits),
-    });
+    this.walletService.getDeposits().subscribe({ next: (r) => (this.deposits = r.deposits) });
   }
 
   loadWithdrawals() {
-    this.walletService.getWithdrawals().subscribe({
-      next: (r) => (this.withdrawals = r.withdrawals),
-    });
+    this.walletService.getWithdrawals().subscribe({ next: (r) => (this.withdrawals = r.withdrawals) });
   }
 
   copyUpi() {
@@ -313,15 +361,10 @@ export class WalletComponent implements OnInit, OnDestroy {
   }
 
   submitDeposit() {
-    if (!this.depositQr) {
-      this.error = 'Generate QR code first';
-      return;
-    }
-
+    if (!this.depositQr) return;
     this.error = '';
     this.message = '';
     this.submitting = true;
-
     this.walletService.submitDeposit(this.depositQr.amount, this.utrNumber.trim(), this.depositQr.orderId).subscribe({
       next: (r) => {
         this.message = r.message;

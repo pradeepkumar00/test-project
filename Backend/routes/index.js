@@ -8,6 +8,7 @@ const battlesRoutes = require('./battles');
 const homeRoutes = require('./home');
 const profileRoutes = require('./profile');
 const adminRoutes = require('./admin');
+const superadminRoutes = require('./superadmin');
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use('/battles', battlesRoutes);
 router.use('/home', homeRoutes);
 router.use('/profile', profileRoutes);
 router.use('/admin', adminRoutes);
+router.use('/superadmin', superadminRoutes);
 
 module.exports = router;

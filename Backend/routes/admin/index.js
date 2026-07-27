@@ -1,7 +1,7 @@
 const express = require('express');
 const { body } = require('express-validator');
 const validate = require('../../middleware/validate');
-const { adminAuth, superAdminOnly } = require('../../middleware/adminAuth');
+const { adminAuth, requirePermission } = require('../../middleware/adminAuth');
 const authController = require('../../controllers/admin/auth');
 const dashboardController = require('../../controllers/admin/dashboard');
 const depositsController = require('../../controllers/admin/deposits');
@@ -25,56 +25,101 @@ router.use(adminAuth);
 
 router.get('/auth/profile', authController.getProfile);
 router.post('/auth/logout', authController.logout);
-router.get('/dashboard', dashboardController.getDashboard);
-router.get('/rejection-reasons', rejectionReasonsController.getRejectionReasons);
 
-router.get('/deposits', depositsController.listDeposits);
-router.post('/deposits/:id/approve', depositsController.approveDeposit);
+router.get('/dashboard', requirePermission('dashboard.view'), dashboardController.getDashboard);
+
+router.get(
+  '/rejection-reasons',
+  requirePermission('deposits.manage', 'withdrawals.manage'),
+  rejectionReasonsController.getRejectionReasons
+);
+
+router.get('/deposits', requirePermission('deposits.view'), depositsController.listDeposits);
+router.post(
+  '/deposits/:id/approve',
+  requirePermission('deposits.manage'),
+  depositsController.approveDeposit
+);
 router.post(
   '/deposits/:id/reject',
+  requirePermission('deposits.manage'),
   [body('reason').trim().notEmpty().withMessage('Rejection reason is required')],
   validate,
   depositsController.rejectDeposit
 );
 
-router.get('/battles', battlesController.listBattles);
-router.get('/battles/:id', battlesController.getBattle);
-router.post('/battles/:id/cancel', [body('reason').optional().isString()], validate, battlesController.cancelBattleHandler);
-router.delete('/battles/:id', battlesController.deleteBattleHandler);
+router.get('/battles', requirePermission('battles.view'), battlesController.listBattles);
+router.get('/battles/:id', requirePermission('battles.view'), battlesController.getBattle);
+router.post(
+  '/battles/:id/cancel',
+  requirePermission('battles.manage'),
+  [body('reason').optional().isString()],
+  validate,
+  battlesController.cancelBattleHandler
+);
+router.delete(
+  '/battles/:id',
+  requirePermission('battles.manage'),
+  battlesController.deleteBattleHandler
+);
 router.post(
   '/battles/:id/complete',
+  requirePermission('battles.manage'),
   [body('winnerId').notEmpty()],
   validate,
   battlesController.forceCompleteBattle
 );
 
-router.get('/users', usersController.listUsers);
-router.get('/users/:id', usersController.getUser);
-router.put('/users/:id/status', [body('isActive').isBoolean()], validate, usersController.updateUserStatus);
+router.get('/users', requirePermission('users.view'), usersController.listUsers);
+router.get('/users/:id', requirePermission('users.view'), usersController.getUser);
+router.put(
+  '/users/:id/status',
+  requirePermission('users.manage'),
+  [body('isActive').isBoolean()],
+  validate,
+  usersController.updateUserStatus
+);
 router.post(
   '/users/:id/balance',
-  superAdminOnly,
+  requirePermission('users.balance'),
   [body('amount').isFloat({ min: 0.01 }), body('type').isIn(['credit', 'debit']), body('reason').optional().isString()],
   validate,
   usersController.adjustBalance
 );
 
-router.get('/withdrawals', withdrawalsController.listWithdrawals);
-router.post('/withdrawals/:id/approve', withdrawalsController.approveWithdraw);
+router.get('/withdrawals', requirePermission('withdrawals.view'), withdrawalsController.listWithdrawals);
+router.post(
+  '/withdrawals/:id/approve',
+  requirePermission('withdrawals.manage'),
+  withdrawalsController.approveWithdraw
+);
 router.post(
   '/withdrawals/:id/reject',
+  requirePermission('withdrawals.manage'),
   [body('reason').trim().notEmpty().withMessage('Rejection reason is required')],
   validate,
   withdrawalsController.rejectWithdraw
 );
 
-router.get('/kyc/pending', kycController.listPendingKyc);
-router.post('/kyc/:userId/approve', kycController.approveKyc);
-router.post('/kyc/:userId/reject', [body('reason').optional().isString()], validate, kycController.rejectKyc);
+router.get('/kyc/pending', requirePermission('kyc.view'), kycController.listPendingKyc);
+router.post('/kyc/:userId/approve', requirePermission('kyc.manage'), kycController.approveKyc);
+router.post(
+  '/kyc/:userId/reject',
+  requirePermission('kyc.manage'),
+  [body('reason').optional().isString()],
+  validate,
+  kycController.rejectKyc
+);
 
-router.get('/transactions', transactionsController.listTransactions);
+router.get('/transactions', requirePermission('transactions.view'), transactionsController.listTransactions);
 
-router.get('/settings', settingsController.getSettings);
-router.put('/settings', settingsController.updateSettingsValidation, validate, settingsController.updateSettings);
+router.get('/settings', requirePermission('settings.view'), settingsController.getSettings);
+router.put(
+  '/settings',
+  requirePermission('settings.manage'),
+  settingsController.updateSettingsValidation,
+  validate,
+  settingsController.updateSettings
+);
 
 module.exports = router;

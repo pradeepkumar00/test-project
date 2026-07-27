@@ -7,7 +7,7 @@ const listUsers = async (req, res, next) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const search = req.query.search;
 
-    const filter = { role: 'user' };
+    const filter = {};
     if (search) {
       filter.$or = [
         { mobile: { $regex: search, $options: 'i' } },
@@ -37,7 +37,7 @@ const listUsers = async (req, res, next) => {
 const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id).select('-password');
-    if (!user || user.role !== 'user') {
+    if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
     res.json({ success: true, user });
@@ -51,7 +51,7 @@ const updateUserStatus = async (req, res, next) => {
     const { isActive } = req.body;
     const user = await User.findById(req.params.id);
 
-    if (!user || user.role !== 'user') {
+    if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
@@ -73,7 +73,7 @@ const adjustBalance = async (req, res, next) => {
     const { amount, type, reason } = req.body;
     const user = await User.findById(req.params.id);
 
-    if (!user || user.role !== 'user') {
+    if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 

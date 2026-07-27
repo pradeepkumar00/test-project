@@ -12,9 +12,9 @@ export const GAME_CARDS: GameCard[] = [
     slug: 'ludo-classic',
     name: 'Ludo Classic',
     subtitle: 'Play classic 1v1 battles',
-    image: '/assets/games/ludo-classic.svg',
+    image: '/assets/games/ludo-classic.png',
     status: 'live',
-    accent: '#7c3aed',
+    accent: '#facc15',
   },
   {
     slug: 'ludo-speed',
@@ -22,7 +22,7 @@ export const GAME_CARDS: GameCard[] = [
     subtitle: 'Fast rounds, big wins',
     image: '/assets/games/ludo-speed.svg',
     status: 'coming_soon',
-    accent: '#06b6d4',
+    accent: '#facc15',
   },
 ];
 

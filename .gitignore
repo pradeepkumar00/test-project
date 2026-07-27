@@ -13,6 +13,10 @@ Backend/config/local.json
 .env
 .env.local
 Backend/config/firebase-service-account.json
+Backend/secrets/*
+!Backend/secrets/*.example.json
+!Backend/secrets/.gitkeep
+
 
 # Logs & OS
 *.log
