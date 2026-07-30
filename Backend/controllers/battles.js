@@ -6,9 +6,14 @@ const { getPlatformSettings } = require('../services/platformSettingsService');
 const {
   createBattle,
   joinBattle,
+  startBattle,
+  reportBattleResult,
   completeBattle,
   calculatePrize,
   formatBattle,
+  cancelBattle,
+  getStartTimeoutMs,
+  findActiveBattleForUser,
 } = require('../services/battleService');
 
 const createBattleValidation = [
@@ -56,7 +61,12 @@ const createBattleHandler = async (req, res) => {
       totalBalance: user.balance + user.bonusBalance,
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    const payload = { success: false, message: error.message };
+    if (error.code === 'ACTIVE_BATTLE' && error.activeBattleId) {
+      payload.code = 'ACTIVE_BATTLE';
+      payload.activeBattleId = error.activeBattleId;
+    }
+    res.status(400).json(payload);
   }
 };
 
@@ -159,23 +169,86 @@ const getRunningBattles = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
 
+    // Live = room code entered (running) or awaiting admin after both results
     const [battles, total] = await Promise.all([
-      Battle.find({ status: 'running' })
+      Battle.find({ status: { $in: ['running', 'pending_verification'] } })
         .populate('creator', 'name mobile')
         .populate('joiner', 'name mobile')
         .sort({ startedAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
-      Battle.countDocuments({ status: 'running' }),
+      Battle.countDocuments({ status: { $in: ['running', 'pending_verification'] } }),
     ]);
 
     res.json({
       success: true,
       battles: battles.map((b) => ({
         ...formatBattle(b),
-        title: `Game Play between ${b.creator?.name || b.creator?.mobile} & ${b.joiner?.name || b.joiner?.mobile}`,
+        title: b.joiner
+          ? `Game Play between ${b.creator?.name || b.creator?.mobile} & ${b.joiner?.name || b.joiner?.mobile}`
+          : `Waiting — ${b.creator?.name || b.creator?.mobile}`,
       })),
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      serverTime: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/** Matched battles for the current user (waiting for room code / start) */
+const getMatchedBattles = async (req, res, next) => {
+  try {
+    const battles = await Battle.find({
+      status: 'matched',
+      $or: [{ creator: req.user._id }, { joiner: req.user._id }],
+    })
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile')
+      .sort({ matchedAt: -1 })
+      .limit(50);
+
+    res.json({
+      success: true,
+      battles: battles.map(formatBattle),
+      serverTime: new Date().toISOString(),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getBattleById = async (req, res, next) => {
+  try {
+    const battle = await Battle.findById(req.params.id)
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile')
+      .populate('challengedUser', 'name mobile')
+      .populate('winner', 'name mobile')
+      .populate('claimedWinner', 'name mobile');
+
+    if (!battle) {
+      return res.status(404).json({ success: false, message: 'Battle not found' });
+    }
+
+    const uid = req.user._id.toString();
+    const isParticipant =
+      battle.creator._id.toString() === uid ||
+      (battle.joiner && battle.joiner._id.toString() === uid);
+
+    // Hide room code from non-participants
+    const formatted = formatBattle(battle);
+    if (!isParticipant) {
+      formatted.roomCode = battle.status === 'running' || battle.status === 'pending_verification'
+        ? formatted.roomCode
+        : null;
+    }
+
+    res.json({
+      success: true,
+      battle: formatted,
+      isParticipant,
+      serverTime: new Date().toISOString(),
     });
   } catch (error) {
     next(error);
@@ -198,7 +271,144 @@ const joinBattleHandler = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Battle joined! Game is now running.',
+      message: 'Battle joined! Waiting for creator to start.',
+      battle: formatBattle(populated),
+      balance: user?.balance,
+      bonusBalance: user?.bonusBalance,
+      totalBalance: user ? user.balance + user.bonusBalance : undefined,
+    });
+  } catch (error) {
+    const payload = { success: false, message: error.message };
+    if (error.code === 'ACTIVE_BATTLE' && error.activeBattleId) {
+      payload.code = 'ACTIVE_BATTLE';
+      payload.activeBattleId = error.activeBattleId;
+    }
+    res.status(400).json(payload);
+  }
+};
+
+const startBattleHandler = async (req, res) => {
+  try {
+    const battle = await startBattle({
+      userId: req.user._id,
+      battleId: req.params.id,
+      roomCode: req.body.roomCode,
+    });
+
+    const populated = await Battle.findById(battle._id)
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile');
+
+    res.json({
+      success: true,
+      message: 'Battle started. Room code shared with opponent.',
+      battle: formatBattle(populated),
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const reportResultHandler = async (req, res) => {
+  try {
+    let screenshotUrl = req.body.screenshotUrl || null;
+
+    if (req.file) {
+      const { isS3Enabled, uploadBattleScreenshot: uploadToS3 } = require('../services/s3Service');
+      if (isS3Enabled()) {
+        screenshotUrl = await uploadToS3(req.file, req.params.id);
+      } else {
+        screenshotUrl = `/uploads/battles/${req.file.filename}`;
+      }
+    }
+
+    const battle = await reportBattleResult({
+      userId: req.user._id,
+      battleId: req.params.id,
+      result: req.body.result,
+      screenshotUrl,
+    });
+
+    const populated = await Battle.findById(battle._id)
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile')
+      .populate('claimedWinner', 'name mobile')
+      .populate('winner', 'name mobile');
+
+    const user = await User.findById(req.user._id);
+    let message = 'Result recorded';
+    if (battle.status === 'completed') {
+      message = 'Result confirmed. Prize credited to the winner.';
+    } else if (battle.status === 'cancelled') {
+      message = battle.cancelReason || 'Battle cancelled and entry fees refunded.';
+    } else if (battle.status === 'pending_verification') {
+      if (battle.conflictType === 'both_won') {
+        message = 'Conflict: both claimed win. Admin will review both screenshots.';
+      } else if (battle.conflictType === 'win_vs_cancel') {
+        message = 'Conflict: win vs cancel. Admin will decide payout or refund.';
+      } else if (battle.conflictType === 'agreed_win_loss') {
+        message = 'Results agree. Waiting for admin to verify screenshot and pay.';
+      } else {
+        message = battle.conflictNote || 'Submitted for admin verification.';
+      }
+    } else if (battle.status === 'running') {
+      message = 'Your result is saved. Waiting for opponent to submit theirs.';
+    }
+
+    res.json({
+      success: true,
+      message,
+      battle: formatBattle(populated),
+      balance: user?.balance,
+      bonusBalance: user?.bonusBalance,
+      totalBalance: user ? user.balance + user.bonusBalance : undefined,
+      serverTime: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+const cancelMyBattleHandler = async (req, res) => {
+  try {
+    const battle = await Battle.findById(req.params.id);
+    if (!battle) {
+      return res.status(404).json({ success: false, message: 'Battle not found' });
+    }
+
+    const uid = req.user._id.toString();
+    const isCreator = battle.creator.toString() === uid;
+    const isJoiner = battle.joiner && battle.joiner.toString() === uid;
+
+    if (!isCreator && !isJoiner) {
+      return res.status(403).json({ success: false, message: 'Not your battle' });
+    }
+
+    if (battle.status === 'open' && !isCreator) {
+      return res.status(403).json({ success: false, message: 'Only creator can cancel an open battle' });
+    }
+
+    if (['completed', 'cancelled', 'pending_verification'].includes(battle.status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This battle cannot be cancelled now',
+      });
+    }
+
+    const cancelled = await cancelBattle(
+      req.params.id,
+      req.body.reason || `Cancelled by ${isCreator ? 'creator' : 'joiner'}`
+    );
+
+    const populated = await Battle.findById(cancelled._id)
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile');
+
+    const user = await User.findById(req.user._id);
+
+    res.json({
+      success: true,
+      message: 'Battle cancelled and entry fee refunded',
       battle: formatBattle(populated),
       balance: user?.balance,
       bonusBalance: user?.bonusBalance,
@@ -210,26 +420,10 @@ const joinBattleHandler = async (req, res) => {
 };
 
 const completeBattleHandler = async (req, res) => {
-  try {
-    const { winnerId } = req.body;
-    const battle = await completeBattle({
-      battleId: req.params.id,
-      winnerId,
-    });
-
-    const populated = await Battle.findById(battle._id)
-      .populate('creator', 'name mobile')
-      .populate('joiner', 'name mobile')
-      .populate('winner', 'name mobile');
-
-    res.json({
-      success: true,
-      message: 'Battle completed',
-      battle: formatBattle(populated),
-    });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
+  return res.status(403).json({
+    success: false,
+    message: 'Players cannot complete battles directly. Submit result for admin verification.',
+  });
 };
 
 const getMyBattles = async (req, res, next) => {
@@ -248,6 +442,18 @@ const getMyBattles = async (req, res, next) => {
       .limit(50);
 
     res.json({ success: true, battles: battles.map(formatBattle) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getActiveBattle = async (req, res, next) => {
+  try {
+    const battle = await findActiveBattleForUser(req.user._id);
+    res.json({
+      success: true,
+      battle: battle ? formatBattle(battle) : null,
+    });
   } catch (error) {
     next(error);
   }
@@ -273,10 +479,16 @@ module.exports = {
   createBattleHandler,
   getOpenBattles,
   getRunningBattles,
+  getMatchedBattles,
   getChallenges,
   getLeaderboard,
+  getBattleById,
   joinBattleHandler,
+  startBattleHandler,
+  reportResultHandler,
+  cancelMyBattleHandler,
   completeBattleHandler,
   getMyBattles,
+  getActiveBattle,
   previewPrize,
 };

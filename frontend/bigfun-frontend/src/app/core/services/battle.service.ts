@@ -44,7 +44,21 @@ export class BattleService {
   }
 
   getRunningBattles() {
-    return this.http.get<{ success: boolean; battles: Battle[] }>(`${environment.apiUrl}/battles/running`);
+    return this.http.get<{ success: boolean; battles: Battle[]; serverTime?: string }>(
+      `${environment.apiUrl}/battles/running`
+    );
+  }
+
+  getMatchedBattles() {
+    return this.http.get<{ success: boolean; battles: Battle[]; serverTime?: string }>(
+      `${environment.apiUrl}/battles/matched`
+    );
+  }
+
+  getActiveBattle() {
+    return this.http.get<{ success: boolean; battle: Battle | null }>(
+      `${environment.apiUrl}/battles/active`
+    );
   }
 
   getChallenges(gameType?: string) {
@@ -71,6 +85,58 @@ export class BattleService {
       bonusBalance?: number;
       totalBalance?: number;
     }>(`${environment.apiUrl}/battles/${id}/join`, {});
+  }
+
+  getBattle(id: string) {
+    return this.http.get<{
+      success: boolean;
+      battle: Battle;
+      isParticipant?: boolean;
+      serverTime?: string;
+    }>(`${environment.apiUrl}/battles/${id}`);
+  }
+
+  startBattle(id: string, roomCode: string) {
+    return this.http.post<{ success: boolean; battle: Battle; message: string }>(
+      `${environment.apiUrl}/battles/${id}/start`,
+      { roomCode }
+    );
+  }
+
+  reportResult(id: string, result: 'won' | 'lost' | 'cancel', screenshot?: File) {
+    if (screenshot) {
+      const form = new FormData();
+      form.append('result', result);
+      form.append('screenshot', screenshot);
+      return this.http.post<{
+        success: boolean;
+        battle: Battle;
+        message: string;
+        balance?: number;
+        bonusBalance?: number;
+        totalBalance?: number;
+      }>(`${environment.apiUrl}/battles/${id}/report`, form);
+    }
+
+    return this.http.post<{
+      success: boolean;
+      battle: Battle;
+      message: string;
+      balance?: number;
+      bonusBalance?: number;
+      totalBalance?: number;
+    }>(`${environment.apiUrl}/battles/${id}/report`, { result });
+  }
+
+  cancelBattle(id: string, reason?: string) {
+    return this.http.post<{
+      success: boolean;
+      battle: Battle;
+      message: string;
+      balance?: number;
+      bonusBalance?: number;
+      totalBalance?: number;
+    }>(`${environment.apiUrl}/battles/${id}/cancel`, { reason });
   }
 
   getMyBattles() {

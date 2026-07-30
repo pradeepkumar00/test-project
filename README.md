@@ -244,7 +244,7 @@ npm run onboard:superadmin -- --mobile 9999999999 --password 'x' --promote --no-
 - JWT auth for users and admins (separate secrets)
 - Role-based admin permissions (`admin` / `superadmin`)
 - Redis-backed OTP with key prefix
-- SMS OTP via Twilio (configurable; console fallback for local dev)
+- WhatsApp OTP via Twilio (default); SMS optional; console fallback for local dev
 - Wallet with admin approval for deposits/withdrawals
 - Battle engine with platform fee; prize + loss tracking
 - Platform settings stored in MongoDB (editable from admin)
@@ -286,17 +286,42 @@ Backend/secrets/
 └── superadmin.json           ← created by onboard script (gitignored)
 ```
 
-### SMS / Twilio (OTP)
+### WhatsApp / SMS OTP
 
-| `sms.provider` | Behavior |
+OTP channel is controlled by `otp.channel` (`whatsapp` by default, or `sms`).
+
+| Channel config | Behavior |
 |----------------|----------|
-| `console` | Logs OTP to server console (default for local dev) |
-| `twilio` | Sends OTP via Twilio SMS API |
+| `otp.channel: "whatsapp"` + `whatsapp.provider: "console"` | Logs OTP to server console (local dev) |
+| `otp.channel: "whatsapp"` + `whatsapp.provider: "twilio"` | Sends OTP via Twilio WhatsApp |
+| `otp.channel: "sms"` + `sms.provider: "twilio"` | Sends OTP via Twilio SMS |
 
-**Enable Twilio in `Backend/config/local.json`:**
+**Enable Twilio WhatsApp in `Backend/config/local.json`:**
 
 ```json
 {
+  "otp": { "channel": "whatsapp", "expiryMinutes": 10 },
+  "whatsapp": {
+    "provider": "twilio",
+    "twilio": {
+      "from": "whatsapp:+14155238886",
+      "countryCode": "+91",
+      "contentSid": ""
+    }
+  }
+}
+```
+
+Notes:
+- Twilio WhatsApp credentials fall back to `sms.twilio.accountSid` / `authToken` if empty.
+- For production, set an approved WhatsApp template `contentSid` (variable `1` = OTP, `2` = expiry minutes).
+- Sandbox testing: join the Twilio WhatsApp sandbox from the phone before requesting OTP.
+
+**Enable Twilio SMS instead:**
+
+```json
+{
+  "otp": { "channel": "sms" },
   "sms": {
     "provider": "twilio",
     "twilio": {

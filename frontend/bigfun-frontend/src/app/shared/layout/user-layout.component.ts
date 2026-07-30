@@ -15,58 +15,126 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
   template: `
     <div class="layout" [class.drawer-open]="menuOpen">
       @if (menuOpen) {
-        <div class="drawer-backdrop" (click)="closeMenu()"></div>
+        <div class="drawer-backdrop mobile-only" (click)="closeMenu()"></div>
       }
 
-      <aside class="drawer" [class.open]="menuOpen">
-        <div class="drawer-header">
-          <img src="/assets/brand/masti-ludo-sticker.png" alt="Masti Ludo" class="drawer-logo" />
-          <button type="button" class="drawer-close" (click)="closeMenu()" aria-label="Close menu">✕</button>
+      <!-- Desktop sidebar (always visible ≥900px) -->
+      <aside class="sidebar desktop-only">
+        <div class="sidebar-brand">
+          <img src="/assets/brand/masti-ludo-sticker.png" alt="Masti Ludo" class="brand-logo" />
+          <div class="brand-text">
+            <strong>Masti Ludo</strong>
+            <small>Play · Win · Earn</small>
+          </div>
         </div>
 
+        <nav class="side-nav">
+          <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <span class="nav-ico">🏠</span> Home
+          </a>
+          <a routerLink="/wallet" routerLinkActive="active">
+            <span class="nav-ico">💳</span> Wallet
+          </a>
+          <a routerLink="/refer" routerLinkActive="active">
+            <span class="nav-ico">🎁</span> Refer & Earn
+          </a>
+          <a routerLink="/support" routerLinkActive="active">
+            <span class="nav-ico">🎧</span> Support
+          </a>
+          <a routerLink="/history" routerLinkActive="active">
+            <span class="nav-ico">🕐</span> History
+          </a>
+          <a routerLink="/profile" routerLinkActive="active">
+            <span class="nav-ico">👤</span> Profile
+          </a>
+          <button type="button" class="side-link" (click)="goKyc()">
+            <span class="nav-ico">🛡️</span> KYC
+          </button>
+        </nav>
+
+        <div class="sidebar-foot">
+          @if (user) {
+            <div class="side-user">
+              <strong>{{ user.name || user.mobile }}</strong>
+              <small>{{ user.mobile }}</small>
+            </div>
+          }
+          <button type="button" class="logout-btn" (click)="logout()">Logout</button>
+        </div>
+      </aside>
+
+      <!-- Mobile drawer -->
+      <aside class="drawer mobile-only" [class.open]="menuOpen">
+        <div class="drawer-header">
+          <img src="/assets/brand/masti-ludo-sticker.png" alt="Masti Ludo" class="drawer-logo" />
+          <button type="button" class="drawer-close" (click)="closeMenu()" aria-label="Close">✕</button>
+        </div>
         @if (user) {
           <div class="drawer-user">
             <strong>{{ user.name || user.mobile }}</strong>
             <small>{{ user.mobile }}</small>
           </div>
         }
-
         <nav class="drawer-nav">
-          <a routerLink="/profile" routerLinkActive="active" (click)="closeMenu()">
-            <span class="nav-ico">👤</span> My Profile
+          <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
+            <span class="nav-ico">🏠</span> Home
           </a>
-          <a routerLink="/profile" [queryParams]="{ kyc: '1' }" (click)="closeMenu()">
-            <span class="nav-ico">🛡️</span> KYC
+          <a routerLink="/wallet" routerLinkActive="active" (click)="closeMenu()">
+            <span class="nav-ico">💳</span> Wallet
+          </a>
+          <a routerLink="/refer" routerLinkActive="active" (click)="closeMenu()">
+            <span class="nav-ico">🎁</span> Refer & Earn
+          </a>
+          <a routerLink="/support" routerLinkActive="active" (click)="closeMenu()">
+            <span class="nav-ico">🎧</span> Support
           </a>
           <a routerLink="/history" routerLinkActive="active" (click)="closeMenu()">
             <span class="nav-ico">🕐</span> History
           </a>
-          <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeMenu()">
-            <span class="nav-ico">🏠</span> App Dashboard
+          <a routerLink="/profile" routerLinkActive="active" (click)="closeMenu()">
+            <span class="nav-ico">👤</span> Profile
           </a>
+          <button type="button" class="drawer-logout kyc-link" (click)="goKyc()">
+            <span class="nav-ico">🛡️</span> KYC
+          </button>
           <button type="button" class="drawer-logout" (click)="logout()">
             <span class="nav-ico">🚪</span> Logout
           </button>
         </nav>
       </aside>
 
-      <div class="main-shell">
+      <div class="main">
         <header class="top-header">
-          <button type="button" class="menu-btn" (click)="toggleMenu()" aria-label="Open menu">
-            <span></span><span></span><span></span>
-          </button>
+          <div class="header-inner">
+            <button type="button" class="menu-btn mobile-only" (click)="toggleMenu()" aria-label="Open menu">
+              <span></span><span></span><span></span>
+            </button>
 
-          <img src="/assets/brand/masti-ludo-sticker.png" alt="Masti Ludo" class="center-logo" />
+            <div class="header-left desktop-only">
+              <h1 class="page-greeting">Welcome back</h1>
+              @if (user) {
+                <p class="page-user">{{ user.name || user.mobile }}</p>
+              }
+            </div>
 
-          <div class="wallet-pair">
-            <a routerLink="/wallet" class="wallet-chip" (click)="closeMenu()" title="Deposited Cash">
-              <img src="/assets/icons/wallet-deposit.png" alt="" class="chip-icon" />
-              <strong>{{ depositedCash | number:'1.0-0' }}</strong>
-            </a>
-            <a routerLink="/wallet" class="wallet-chip" (click)="closeMenu()" title="Referral Cash">
-              <img src="/assets/icons/wallet-referral.png" alt="" class="chip-icon gift" />
-              <strong>{{ referralCash | number:'1.0-2' }}</strong>
-            </a>
+            <img src="/assets/brand/masti-ludo-sticker.png" alt="Masti Ludo" class="center-logo mobile-only" />
+
+            <div class="wallet-pair">
+              <a routerLink="/wallet" class="wallet-chip" title="Deposited Cash">
+                <img src="/assets/icons/wallet-deposit.png" alt="" class="chip-icon" />
+                <div class="chip-meta">
+                  <small>Cash</small>
+                  <strong>₹{{ depositedCash | number:'1.0-0' }}</strong>
+                </div>
+              </a>
+              <a routerLink="/wallet" class="wallet-chip" title="Referral Cash">
+                <img src="/assets/icons/wallet-referral.png" alt="" class="chip-icon gift" />
+                <div class="chip-meta">
+                  <small>Referral</small>
+                  <strong>₹{{ referralCash | number:'1.0-2' }}</strong>
+                </div>
+              </a>
+            </div>
           </div>
         </header>
 
@@ -74,24 +142,144 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
           <router-outlet />
         </main>
 
-        <app-bottom-nav />
+        <div class="mobile-only">
+          <app-bottom-nav />
+        </div>
       </div>
     </div>
   `,
   styles: [`
     .layout {
       min-height: 100vh;
+      min-height: 100dvh;
       width: 100%;
-      background: radial-gradient(ellipse at top, #1a0a3d 0%, #0a0614 55%, #050308 100%);
+      display: flex;
+      background: transparent;
     }
 
+    .desktop-only { display: none; }
+    .mobile-only { display: block; }
+
+    @media (min-width: 900px) {
+      .desktop-only { display: block; }
+      .mobile-only { display: none !important; }
+      .wallet-pair .desktop-only,
+      .header-left.desktop-only { display: block; }
+    }
+
+    /* —— Desktop sidebar —— */
+    .sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: linear-gradient(180deg, #0e0820 0%, #080414 100%);
+      border-right: 1px solid rgba(168, 85, 247, 0.25);
+      display: none;
+      flex-direction: column;
+      padding: 20px 14px;
+      position: sticky;
+      top: 0;
+      align-self: flex-start;
+      height: 100vh;
+      height: 100dvh;
+    }
+    @media (min-width: 900px) {
+      .sidebar { display: flex; }
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 8px 20px;
+      border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+      margin-bottom: 16px;
+    }
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      image-rendering: -webkit-optimize-contrast;
+    }
+    .brand-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .brand-text small {
+      color: #a3a3b8;
+      font-size: 11px;
+    }
+
+    .side-nav {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+    }
+    .side-nav a,
+    .side-nav .side-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      color: #d4d4d8;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .side-nav a:hover,
+    .side-nav .side-link:hover {
+      background: rgba(34, 211, 238, 0.08);
+      color: #fff;
+    }
+    .side-nav a.active {
+      background: linear-gradient(90deg, rgba(34, 211, 238, 0.18), rgba(168, 85, 247, 0.12));
+      color: #67e8f9;
+      border: 1px solid rgba(34, 211, 238, 0.25);
+    }
+    .nav-ico { width: 22px; text-align: center; }
+
+    .sidebar-foot {
+      padding-top: 14px;
+      border-top: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    .side-user {
+      padding: 0 8px 12px;
+    }
+    .side-user strong { display: block; font-size: 13px; color: #fff; }
+    .side-user small { color: #a3a3b8; font-size: 12px; }
+    .logout-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(239, 68, 68, 0.08);
+      color: #f87171;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .logout-btn:hover { background: rgba(239, 68, 68, 0.16); }
+
+    /* —— Mobile drawer —— */
     .drawer-backdrop {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.65);
       z-index: 240;
     }
-
     .drawer {
       position: fixed;
       top: 0;
@@ -108,7 +296,6 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       padding-top: env(safe-area-inset-top, 0px);
     }
     .drawer.open { transform: translateX(0); }
-
     .drawer-header {
       display: flex;
       align-items: center;
@@ -118,8 +305,9 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       border-bottom: 1px solid rgba(168, 85, 247, 0.25);
     }
     .drawer-logo {
-      height: 48px;
+      height: 40px;
       width: auto;
+      max-width: 120px;
       object-fit: contain;
     }
     .drawer-close {
@@ -129,17 +317,14 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       border-radius: 10px;
       background: transparent;
       color: #fff;
-      font-size: 16px;
       cursor: pointer;
     }
-
     .drawer-user {
       padding: 14px 16px;
       border-bottom: 1px solid rgba(168, 85, 247, 0.2);
     }
-    .drawer-user strong { display: block; font-size: 14px; color: #fff; }
+    .drawer-user strong { display: block; font-size: 14px; }
     .drawer-user small { color: #a3a3b8; font-size: 12px; }
-
     .drawer-nav {
       flex: 1;
       overflow-y: auto;
@@ -153,7 +338,7 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 14px 14px;
+      padding: 14px;
       border-radius: 12px;
       color: #e5e5e5;
       font-size: 15px;
@@ -166,41 +351,50 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       cursor: pointer;
       font-family: inherit;
     }
-    .drawer-nav a:hover,
-    .drawer-logout:hover,
-    .drawer-nav a.active {
+    .drawer-nav a.active,
+    .drawer-nav a:hover {
       background: rgba(34, 211, 238, 0.12);
       color: #67e8f9;
     }
-    .nav-ico { width: 22px; text-align: center; }
     .drawer-logout { color: #f87171; margin-top: 8px; }
-    .drawer-logout:hover { background: rgba(239, 68, 68, 0.12); color: #fca5a5; }
-
-    .drawer-footer {
-      display: none;
+    .drawer-logout.kyc-link {
+      color: #e5e5e5;
+      margin-top: 0;
     }
-    .logout { width: 100%; color: #ef4444 !important; }
+    .drawer-logout.kyc-link:hover {
+      background: rgba(34, 211, 238, 0.12);
+      color: #67e8f9;
+    }
 
-    .main-shell {
-      min-height: 100vh;
+    /* —— Main column —— */
+    .main {
+      flex: 1;
+      min-width: 0;
       display: flex;
       flex-direction: column;
-      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
     }
 
     .top-header {
       position: sticky;
       top: 0;
       z-index: 150;
-      display: grid;
-      grid-template-columns: 40px 1fr auto;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      padding-top: calc(8px + env(safe-area-inset-top, 0px));
-      background: rgba(5, 3, 12, 0.92);
-      backdrop-filter: blur(12px);
+      background: rgba(7, 4, 26, 0.88);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    .header-inner {
+      width: 100%;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: var(--header-height);
+      padding: 10px var(--page-padding);
+      padding-top: calc(10px + env(safe-area-inset-top, 0px));
     }
 
     .menu-btn {
@@ -216,82 +410,96 @@ import { BottomNavComponent } from '../../shared/components/bottom-nav/bottom-na
       gap: 5px;
       cursor: pointer;
       padding: 0;
+      flex-shrink: 0;
     }
     .menu-btn span {
       display: block;
-      width: 22px;
-      height: 2.5px;
+      width: 20px;
+      height: 2px;
       border-radius: 2px;
       background: #fff;
     }
 
+    .header-left .page-greeting {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .header-left .page-user {
+      font-size: 13px;
+      color: #a3a3b8;
+      margin-top: 2px;
+    }
+
     .center-logo {
-      height: 52px;
+      height: 40px;
       width: auto;
-      max-width: 72px;
+      max-width: 64px;
       object-fit: contain;
-      justify-self: center;
-      filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.35));
+      image-rendering: -webkit-optimize-contrast;
+      filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.3));
     }
 
     .wallet-pair {
       display: flex;
       align-items: center;
       gap: 8px;
-      justify-self: end;
+      margin-left: auto;
     }
     .wallet-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 4px 10px 4px 4px;
+      gap: 8px;
+      padding: 6px 12px 6px 6px;
       border-radius: 999px;
       text-decoration: none;
-      background: rgba(8, 20, 40, 0.95);
-      border: 1.5px solid #22d3ee;
-      box-shadow: 0 0 14px rgba(34, 211, 238, 0.65), inset 0 0 8px rgba(34, 211, 238, 0.18);
-      min-width: 0;
-      max-width: 118px;
+      background: rgba(8, 20, 40, 0.9);
+      border: 1.5px solid rgba(34, 211, 238, 0.55);
+      box-shadow: 0 0 12px rgba(34, 211, 238, 0.25);
     }
     .chip-icon {
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       object-fit: contain;
       flex-shrink: 0;
-      display: block;
     }
-    .chip-icon.gift {
-      width: 26px;
-      height: 26px;
+    .chip-icon.gift { width: 22px; height: 22px; }
+    .chip-meta {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
     }
-    .wallet-chip strong {
+    .chip-meta small {
+      display: none;
+      font-size: 10px;
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .chip-meta strong {
       font-size: 13px;
       font-weight: 800;
       color: #fff;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    @media (min-width: 900px) {
+      .chip-meta small { display: block; }
+      .chip-icon { width: 28px; height: 28px; }
+      .chip-icon.gift { width: 26px; height: 26px; }
     }
 
     .content {
       flex: 1;
       width: 100%;
-      padding: 12px;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--page-padding);
       padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 20px);
     }
-
-    @media (min-width: 480px) {
-      .wallet-chip { max-width: 140px; }
-      .wallet-chip strong { font-size: 14px; }
-      .center-logo { height: 58px; max-width: 84px; }
-    }
-
-    @media (min-width: 768px) {
+    @media (min-width: 900px) {
       .content {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 20px;
-        padding-bottom: calc(var(--nav-height) + 28px);
+        padding-bottom: 40px;
       }
     }
   `],
@@ -341,6 +549,14 @@ export class UserLayoutComponent implements OnInit, OnDestroy {
 
   closeMenu() {
     this.menuOpen = false;
+  }
+
+  goKyc() {
+    this.closeMenu();
+    void this.router.navigate(['/profile'], {
+      queryParams: { kyc: '1' },
+      queryParamsHandling: '',
+    });
   }
 
   openWhatsApp() {

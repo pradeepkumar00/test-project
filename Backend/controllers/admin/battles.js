@@ -1,6 +1,6 @@
 const Battle = require('../../models/Battle');
 const { cancelBattle, deleteBattle, formatBattle } = require('../../services/adminService');
-const { completeBattle } = require('../../services/battleService');
+const { completeBattle, verifyBattleResult } = require('../../services/battleService');
 
 const listBattles = async (req, res, next) => {
   try {
@@ -16,6 +16,7 @@ const listBattles = async (req, res, next) => {
         .populate('creator', 'name mobile')
         .populate('joiner', 'name mobile')
         .populate('winner', 'name mobile')
+        .populate('claimedWinner', 'name mobile')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
@@ -37,7 +38,8 @@ const getBattle = async (req, res, next) => {
     const battle = await Battle.findById(req.params.id)
       .populate('creator', 'name mobile balance')
       .populate('joiner', 'name mobile balance')
-      .populate('winner', 'name mobile');
+      .populate('winner', 'name mobile')
+      .populate('claimedWinner', 'name mobile');
 
     if (!battle) {
       return res.status(404).json({ success: false, message: 'Battle not found' });
@@ -84,7 +86,11 @@ const forceCompleteBattle = async (req, res) => {
       return res.status(400).json({ success: false, message: 'winnerId is required' });
     }
 
-    const battle = await completeBattle({ battleId: req.params.id, winnerId });
+    const battle = await completeBattle({
+      battleId: req.params.id,
+      winnerId,
+      adminId: req.admin._id,
+    });
 
     const populated = await Battle.findById(battle._id)
       .populate('creator', 'name mobile')
@@ -101,10 +107,40 @@ const forceCompleteBattle = async (req, res) => {
   }
 };
 
+const verifyResultHandler = async (req, res) => {
+  try {
+    const { approve, winnerId, reason } = req.body;
+    const battle = await verifyBattleResult({
+      battleId: req.params.id,
+      approve: Boolean(approve),
+      winnerId,
+      adminId: req.admin._id,
+      reason,
+    });
+
+    const populated = await Battle.findById(battle._id)
+      .populate('creator', 'name mobile')
+      .populate('joiner', 'name mobile')
+      .populate('winner', 'name mobile')
+      .populate('claimedWinner', 'name mobile');
+
+    res.json({
+      success: true,
+      message: approve
+        ? 'Result verified — prize credited to winner'
+        : 'Result rejected — battle returned to running',
+      battle: formatBattle(populated),
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   listBattles,
   getBattle,
   cancelBattleHandler,
   deleteBattleHandler,
   forceCompleteBattle,
+  verifyResultHandler,
 };

@@ -24,7 +24,8 @@
     "expiresIn": "ADMIN_JWT_EXPIRES_IN"
   },
   "otp": {
-    "expiryMinutes": "OTP_EXPIRY_MINUTES"
+    "expiryMinutes": "OTP_EXPIRY_MINUTES",
+    "channel": "OTP_CHANNEL"
   },
   "kyc": {
     "aadhaarOtp": {
@@ -58,6 +59,17 @@
       "countryCode": "TWILIO_COUNTRY_CODE"
     }
   },
+  "whatsapp": {
+    "provider": "WHATSAPP_PROVIDER",
+    "otpMessageTemplate": "WHATSAPP_OTP_MESSAGE_TEMPLATE",
+    "twilio": {
+      "accountSid": "WHATSAPP_TWILIO_ACCOUNT_SID",
+      "authToken": "WHATSAPP_TWILIO_AUTH_TOKEN",
+      "from": "WHATSAPP_TWILIO_FROM",
+      "countryCode": "WHATSAPP_TWILIO_COUNTRY_CODE",
+      "contentSid": "WHATSAPP_TWILIO_CONTENT_SID"
+    }
+  },
   "firebase": {
     "enabled": "FIREBASE_ENABLED",
     "databaseURL": "FIREBASE_DATABASE_URL",
@@ -82,6 +94,15 @@
     "platformFeePercent": "BATTLE_PLATFORM_FEE_PERCENT",
     "minEntryFee": "BATTLE_MIN_ENTRY_FEE",
     "maxEntryFee": "BATTLE_MAX_ENTRY_FEE"
+  },
+  "s3": {
+    "enabled": "S3_ENABLED",
+    "region": "S3_REGION",
+    "bucket": "S3_BUCKET",
+    "accessKeyId": "S3_ACCESS_KEY_ID",
+    "secretAccessKey": "S3_SECRET_ACCESS_KEY",
+    "publicBaseUrl": "S3_PUBLIC_BASE_URL",
+    "keyPrefix": "S3_KEY_PREFIX"
   },
   "currency": "CURRENCY",
   "currencySymbol": "CURRENCY_SYMBOL",  

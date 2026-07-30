@@ -28,6 +28,11 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/battles/battles.component').then((m) => m.BattlesComponent),
       },
       {
+        path: 'battle/:id',
+        loadComponent: () =>
+          import('./pages/battles/battle-room.component').then((m) => m.BattleRoomComponent),
+      },
+      {
         path: 'wallet',
         loadComponent: () => import('./pages/wallet/wallet.component').then((m) => m.WalletComponent),
       },

@@ -9,6 +9,7 @@ const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 const { runGameScheduler } = require('./services/gameEngine');
+const { expireStaleMatchedBattles } = require('./services/battleService');
 const { warmPlatformSettingsCache } = require('./services/platformSettingsService');
 
 const app = express();
@@ -18,6 +19,7 @@ app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
 app.use(requestLogger);
 
 app.use('/api', routes);
@@ -44,13 +46,32 @@ const start = async () => {
     runGameScheduler().catch((err) => logger.error('Game scheduler error', { message: err.message }));
   });
 
-  app.listen(port, () => {
+  // Check every 15s for matched battles that were never started
+  cron.schedule('*/15 * * * * *', () => {
+    expireStaleMatchedBattles().catch((err) =>
+      logger.error('Battle start timeout error', { message: err.message })
+    );
+  });
+
+  const server = app.listen(port, () => {
     logger.info('Masti Ludo API started', {
       port,
       healthCheck: `http://localhost:${port}/api/health`,
       adminApi: `http://localhost:${port}/api/admin`,
       superadminApi: `http://localhost:${port}/api/superadmin`,
     });
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`Port ${port} is already in use. Stop the other process, then restart.`, {
+        port,
+        message: err.message,
+      });
+    } else {
+      logger.error('HTTP server failed to start', { message: err.message, code: err.code });
+    }
+    process.exit(1);
   });
 };
 

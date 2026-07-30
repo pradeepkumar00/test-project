@@ -7,7 +7,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   imports: [RouterLink, RouterLinkActive],
   template: `
     <nav class="bottom-nav">
-      <!-- Home -->
       <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-home">
         <span class="active-pill">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -17,7 +16,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </span>
       </a>
 
-      <!-- Wallet -->
       <a routerLink="/wallet" routerLinkActive="active" aria-label="Wallet">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <rect x="3" y="6.5" width="18" height="12" rx="2.5"/>
@@ -26,7 +24,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </svg>
       </a>
 
-      <!-- Refer: two people + swap arrows -->
       <a routerLink="/refer" routerLinkActive="active" aria-label="Refer">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="7" cy="8" r="2.4"/>
@@ -39,7 +36,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </svg>
       </a>
 
-      <!-- Support: headset -->
       <a routerLink="/support" routerLinkActive="active" aria-label="Support">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M5 12a7 7 0 0 1 14 0"/>
@@ -50,7 +46,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </svg>
       </a>
 
-      <!-- Profile -->
       <a routerLink="/profile" routerLinkActive="active" aria-label="Profile">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
@@ -67,28 +62,30 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       left: 0;
       right: 0;
       height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-      padding: 8px 4px calc(8px + env(safe-area-inset-bottom, 0px));
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
       display: flex;
       align-items: center;
       justify-content: space-around;
+      gap: 2px;
       background: linear-gradient(180deg, #1a0a30 0%, #0a0614 100%);
       border-top: 1px solid rgba(168, 85, 247, 0.3);
-      box-shadow: 0 -10px 28px rgba(88, 28, 135, 0.3);
+      box-shadow: 0 -8px 24px rgba(88, 28, 135, 0.28);
       z-index: 200;
     }
     a {
       flex: 1;
+      max-width: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #ffffff;
       text-decoration: none;
-      min-height: 48px;
+      min-height: 44px;
       -webkit-tap-highlight-color: transparent;
     }
     a svg {
-      width: 26px;
-      height: 26px;
+      width: 22px;
+      height: 22px;
       fill: none;
       stroke: currentColor;
       stroke-width: 1.75;
@@ -102,7 +99,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 
     .nav-home .label {
       display: none;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 800;
       color: #111;
       line-height: 1;
@@ -110,19 +107,19 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     .nav-home .active-pill {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 7px;
+      gap: 5px;
+      padding: 6px;
       border-radius: 999px;
     }
     .nav-home.active .active-pill {
       background: #fff;
-      padding: 7px 14px 7px 9px;
-      box-shadow: 0 0 18px rgba(255, 255, 255, 0.28);
+      padding: 6px 12px 6px 8px;
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.25);
     }
     .nav-home.active svg {
       stroke: #111;
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
     }
     .nav-home.active .label {
       display: inline;

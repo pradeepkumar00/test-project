@@ -23,7 +23,8 @@
     "expiresIn": "1d"
   },
   "otp": {
-    "expiryMinutes": 10
+    "expiryMinutes": 10,
+    "channel": "whatsapp"
   },
   "kyc": {
     "aadhaarOtp": {
@@ -61,6 +62,17 @@
       "countryCode": "+91"
     }
   },
+  "whatsapp": {
+    "provider": "console",
+    "otpMessageTemplate": "Your {appName} OTP for {purpose} is {otp}. Valid for {expiryMinutes} minutes. Do not share this code.",
+    "twilio": {
+      "accountSid": "",
+      "authToken": "",
+      "from": "whatsapp:+14155238886",
+      "countryCode": "+91",
+      "contentSid": ""
+    }
+  },
   "firebase": {
     "enabled": false,
     "databaseURL": "",
@@ -87,10 +99,20 @@
     "platformFeePercent": 2.5,
     "minEntryFee": 10,
     "maxEntryFee": 100000,
+    "startTimeoutMinutes": 4,
     "gameTypes": [
       { "slug": "ludo-classic", "name": "MASTI LUDO CLASSIC", "status": "live" },
       { "slug": "ludo-speed", "name": "MASTI LUDO SPEED", "status": "coming_soon" }
     ]
+  },
+  "s3": {
+    "enabled": false,
+    "region": "ap-south-1",
+    "bucket": "",
+    "accessKeyId": "",
+    "secretAccessKey": "",
+    "publicBaseUrl": "",
+    "keyPrefix": "battles/"
   },
   "currency": "INR",
   "currencySymbol": "₹",

@@ -37,7 +37,7 @@ npm start
 Mobile: 9876543210
 ```
 
-Use OTP from the API console when `sms.provider` is `console`.
+Use OTP from the API console when `whatsapp.provider` is `console`.
 
 ## Structure
 

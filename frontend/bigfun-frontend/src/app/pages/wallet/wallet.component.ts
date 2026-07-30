@@ -199,12 +199,26 @@ import { DepositQr, PaymentDetails, WalletDeposit, WalletWithdrawal } from '../.
       position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 300;
     }
     .sheet {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 310;
-      max-height: 85vh; overflow: auto;
-      background: #12081f; color: #fff;
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      z-index: 310;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow: auto;
+      background: #12081f;
+      color: #fff;
       border-radius: 20px 20px 0 0;
       padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
       border-top: 1px solid rgba(34,211,238,0.25);
+    }
+    @media (min-width: 768px) {
+      .sheet {
+        bottom: 12px;
+        border-radius: 20px;
+      }
     }
     .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .sheet-head h3 { font-size: 18px; }

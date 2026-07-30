@@ -68,6 +68,14 @@ export interface Battle {
   entryFee: number;
   winningPrize: number;
   status: string;
+  roomCode?: string | null;
+  resultScreenshotUrl?: string | null;
+  creatorClaim?: { result?: string | null; screenshotUrl?: string | null } | null;
+  joinerClaim?: { result?: string | null; screenshotUrl?: string | null } | null;
+  claimedWinner?: { id: string; name: string; mobile: string } | null;
+  resultConflict?: boolean;
+  conflictType?: string | null;
+  conflictNote?: string | null;
   creator: { id: string; name: string; mobile: string };
   joiner?: { id: string; name: string; mobile: string } | null;
   winner?: { id: string; name: string; mobile: string } | null;

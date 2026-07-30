@@ -1,10 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg: #0a0614;
-  --bg-card: #12081f;
+  --bg: #07041a;
+  --bg-card: rgba(18, 10, 36, 0.85);
   --bg-card-solid: #10081c;
   --bg-input: #0d0818;
+  --bg-sidebar: #0a0618;
   --primary: #22d3ee;
   --primary-light: #67e8f9;
   --secondary: #a855f7;
@@ -13,16 +14,17 @@
   --neon: #22d3ee;
   --text: #ffffff;
   --text-muted: #a3a3b8;
-  --border: rgba(168, 85, 247, 0.35);
+  --border: rgba(168, 85, 247, 0.3);
   --success: #22c55e;
   --danger: #ef4444;
   --gradient-hero: linear-gradient(135deg, #22d3ee 0%, #a855f7 100%);
-  --sidebar: #0a0614;
-  --sidebar-width: 260px;
+  --sidebar-width: 240px;
   --page-padding: 16px;
-  --nav-height: 68px;
-  --radius: 14px;
+  --nav-height: 64px;
+  --header-height: 64px;
+  --radius: 16px;
   --radius-sm: 10px;
+  --content-max: 1180px;
 }
 
 * {
@@ -31,10 +33,18 @@
   padding: 0;
 }
 
-html, body {
+html {
   height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100%;
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -10%, rgba(124, 58, 237, 0.35), transparent 55%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(236, 72, 153, 0.1), transparent 50%),
+    #07041a;
   color: var(--text);
 }
 
@@ -42,7 +52,12 @@ app-root {
   display: block;
   width: 100%;
   min-height: 100vh;
-  background: var(--bg);
+  min-height: 100dvh;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 a {
@@ -57,7 +72,7 @@ input, select, textarea {
   border-radius: var(--radius-sm);
   background: var(--bg-input);
   color: #fff;
-  font-size: 14px;
+  font-size: 16px;
   font-family: inherit;
   outline: none;
 }
@@ -106,6 +121,7 @@ input:focus, select:focus, textarea:focus {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
+  backdrop-filter: blur(8px);
 }
 
 .page { width: 100%; }
@@ -114,13 +130,13 @@ input:focus, select:focus, textarea:focus {
   font-size: 22px;
   font-weight: 800;
   color: #fff;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-sub {
   color: var(--text-muted);
-  font-size: 13px;
-  margin-bottom: 16px;
+  font-size: 14px;
+  margin-bottom: 20px;
 }
 
 .form-group { margin-bottom: 16px; }
@@ -152,6 +168,17 @@ input:focus, select:focus, textarea:focus {
   color: #86efac;
 }
 
-@media (max-width: 768px) {
-  :root { --page-padding: 12px; }
+@media (max-width: 899px) {
+  :root {
+    --page-padding: 14px;
+    --header-height: 56px;
+    --nav-height: 64px;
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --page-padding: 28px;
+    --header-height: 68px;
+  }
 }

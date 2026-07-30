@@ -84,6 +84,10 @@ export class AdminApiService {
     return this.http.post(`${this.base}/battles/${id}/complete`, { winnerId });
   }
 
+  verifyBattle(id: string, approve: boolean, winnerId?: string, reason = '') {
+    return this.http.post(`${this.base}/battles/${id}/verify`, { approve, winnerId, reason });
+  }
+
   deleteBattle(id: string) {
     return this.http.delete(`${this.base}/battles/${id}`);
   }

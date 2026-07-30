@@ -60,6 +60,7 @@ router.post(
   validate,
   battlesController.forceCompleteBattle
 );
+router.post('/battles/:id/verify', battlesController.verifyResultHandler);
 
 router.get('/users', usersController.listUsers);
 router.get('/users/:id', usersController.getUser);

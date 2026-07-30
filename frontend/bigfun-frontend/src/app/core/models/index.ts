@@ -25,6 +25,12 @@ export interface User {
   };
 }
 
+export interface BattleClaim {
+  result?: 'won' | 'lost' | 'cancel' | null;
+  screenshotUrl?: string | null;
+  reportedAt?: string;
+}
+
 export interface Battle {
   id: string;
   gameType: string;
@@ -32,17 +38,32 @@ export interface Battle {
   winningPrize: number;
   totalPool: number;
   platformFee: number;
-  status: 'open' | 'running' | 'completed' | 'cancelled';
+  status: 'open' | 'matched' | 'running' | 'pending_verification' | 'completed' | 'cancelled';
   isChallenge?: boolean;
   direction?: 'incoming' | 'outgoing';
+  roomCode?: string | null;
+  roomCodeSetAt?: string | null;
+  resultScreenshotUrl?: string | null;
+  creatorClaim?: BattleClaim | null;
+  joinerClaim?: BattleClaim | null;
+  claimedWinner?: { id: string; name: string; mobile: string } | null;
+  resultConflict?: boolean;
+  conflictType?: string | null;
+  conflictNote?: string | null;
   creator: { id: string; name: string; mobile: string } | null;
   joiner: { id: string; name: string; mobile: string } | null;
   challengedUser?: { id: string; name: string; mobile: string } | null;
   winner?: { id: string; name: string; mobile: string } | string | null;
+  rejectReason?: string | null;
   title?: string;
+  matchedAt?: string;
+  startDeadlineAt?: string | null;
+  startTimeoutMinutes?: number;
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  cancelledAt?: string;
+  cancelReason?: string | null;
 }
 
 export interface LeaderboardPlayer {

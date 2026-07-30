@@ -24,7 +24,8 @@
     "expiresIn": "1d"
   },
   "otp": {
-    "expiryMinutes": 10
+    "expiryMinutes": 10,
+    "channel": "whatsapp"
   },
   "kyc": {
     "aadhaarOtp": {
@@ -62,6 +63,17 @@
       "countryCode": "+91"
     }
   },
+  "whatsapp": {
+    "provider": "console",
+    "otpMessageTemplate": "Your {appName} OTP for {purpose} is {otp}. Valid for {expiryMinutes} minutes. Do not share this code.",
+    "twilio": {
+      "accountSid": "your-twilio-account-sid",
+      "authToken": "your-twilio-auth-token",
+      "from": "whatsapp:+14155238886",
+      "countryCode": "+91",
+      "contentSid": ""
+    }
+  },
   "firebase": {
     "enabled": false,
     "databaseURL": "https://your-project-id-default-rtdb.firebaseio.com",
@@ -92,6 +104,15 @@
       { "slug": "ludo-classic", "name": "BIG-FUN LUDO CLASSIC", "status": "live" },
       { "slug": "ludo-speed", "name": "BIG-FUN LUDO SPEED", "status": "coming_soon" }
     ]
+  },
+  "s3": {
+    "enabled": true,
+    "region": "ap-south-1",
+    "bucket": "your-masti-ludo-bucket",
+    "accessKeyId": "your-aws-access-key-id",
+    "secretAccessKey": "your-aws-secret-access-key",
+    "publicBaseUrl": "https://your-masti-ludo-bucket.s3.ap-south-1.amazonaws.com",
+    "keyPrefix": "battles/"
   },
   "currency": "INR",
   "currencySymbol": "₹",

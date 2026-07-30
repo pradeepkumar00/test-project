@@ -334,15 +334,23 @@ import { User } from '../../core/models';
     .empty-hist { color: #94a3b8; }
 
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 400;
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1190;
     }
     .kyc-modal {
-      position: fixed; left: 12px; right: 12px; top: 50%; transform: translateY(-50%);
-      z-index: 410; max-height: 88vh; overflow: auto;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1200;
+      width: calc(100% - 24px);
+      max-width: min(480px, calc(100vw - 24px));
+      max-height: 88vh;
+      overflow: auto;
       background: #0b1228;
       border: 1.5px solid #38bdf8;
       box-shadow: 0 0 28px rgba(56,189,248,0.35);
-      border-radius: 18px; padding: 18px 16px 20px;
+      border-radius: 18px;
+      padding: 18px 16px 20px;
     }
     .modal-close {
       position: absolute; top: 12px; right: 12px;
@@ -489,14 +497,33 @@ export class ProfileComponent implements OnInit {
     });
 
     this.route.queryParamMap.subscribe((params) => {
-      if (params.get('kyc') === '1') {
-        const openWhenReady = () => {
-          if (this.user && !this.user.kycVerified) this.openKyc();
-        };
-        if (this.user) openWhenReady();
-        else setTimeout(openWhenReady, 300);
-        void this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      if (params.get('kyc') !== '1') return;
+
+      const tryOpen = () => {
+        if (!this.user) return false;
+        if (this.user.kycVerified) {
+          this.message = 'Your KYC is already verified.';
+          return true;
+        }
+        this.openKyc();
+        return true;
+      };
+
+      if (!tryOpen()) {
+        const sub = this.auth.user$.subscribe((u) => {
+          if (!u) return;
+          this.user = u;
+          if (tryOpen()) sub.unsubscribe();
+        });
+        setTimeout(() => sub.unsubscribe(), 2000);
       }
+
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { kyc: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     });
   }
 

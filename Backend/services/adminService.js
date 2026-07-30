@@ -1,87 +1,10 @@
 const Battle = require('../models/Battle');
 const User = require('../models/User');
 const Withdraw = require('../models/Withdraw');
+const Transaction = require('../models/Transaction');
 const { recordTransaction } = require('./paymentService');
 const { publishWalletUpdate } = require('./firebaseService');
-const { formatBattle } = require('./battleService');
-
-const refundUser = async (userId, amount, battleId, reason, split = null) => {
-  const user = await User.findById(userId);
-  if (!user) return;
-
-  const fromBonus = Math.min(Number(split?.fromBonus) || 0, amount);
-  const fromMain = Math.max(0, amount - fromBonus);
-
-  const balanceBefore = user.balance;
-  const bonusBefore = user.bonusBalance;
-
-  user.balance = Math.round((user.balance + fromMain) * 100) / 100;
-  user.bonusBalance = Math.round((user.bonusBalance + fromBonus) * 100) / 100;
-  await user.save();
-
-  await recordTransaction({
-    userId: user._id,
-    type: 'refund',
-    amount,
-    balanceBefore,
-    balanceAfter: user.balance,
-    referenceId: battleId.toString(),
-    description: reason,
-    metadata: {
-      battleId,
-      action: 'admin_refund',
-      fromBonus,
-      fromMain,
-      bonusBefore,
-      bonusAfter: user.bonusBalance,
-    },
-  });
-
-  await publishWalletUpdate(user, 'battle_refund');
-};
-
-const cancelBattle = async (battleId, reason = 'Cancelled by admin') => {
-  const battle = await Battle.findById(battleId);
-  if (!battle) throw new Error('Battle not found');
-
-  if (['completed', 'cancelled'].includes(battle.status)) {
-    throw new Error(`Battle is already ${battle.status}`);
-  }
-
-  if (battle.status === 'open') {
-    await refundUser(
-      battle.creator,
-      battle.entryFee,
-      battle._id,
-      `${reason} - creator refund`,
-      battle.creatorDeduction
-    );
-  }
-
-  if (battle.status === 'running') {
-    await refundUser(
-      battle.creator,
-      battle.entryFee,
-      battle._id,
-      `${reason} - creator refund`,
-      battle.creatorDeduction
-    );
-    await refundUser(
-      battle.joiner,
-      battle.entryFee,
-      battle._id,
-      `${reason} - joiner refund`,
-      battle.joinerDeduction
-    );
-  }
-
-  battle.status = 'cancelled';
-  battle.cancelReason = reason;
-  battle.cancelledAt = new Date();
-  await battle.save();
-
-  return battle;
-};
+const { formatBattle, cancelBattle } = require('./battleService');
 
 const deleteBattle = async (battleId) => {
   const battle = await Battle.findById(battleId);

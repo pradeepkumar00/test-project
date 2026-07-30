@@ -69,6 +69,11 @@ router.post(
   validate,
   battlesController.forceCompleteBattle
 );
+router.post(
+  '/battles/:id/verify',
+  requirePermission('battles.manage'),
+  battlesController.verifyResultHandler
+);
 
 router.get('/users', requirePermission('users.view'), usersController.listUsers);
 router.get('/users/:id', requirePermission('users.view'), usersController.getUser);
