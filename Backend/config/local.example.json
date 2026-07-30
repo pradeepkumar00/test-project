@@ -25,7 +25,11 @@
   },
   "otp": {
     "expiryMinutes": 10,
-    "channel": "whatsapp"
+    "channel": "whatsapp",
+    "bypass": {
+      "enabled": false,
+      "code": "000000"
+    }
   },
   "kyc": {
     "aadhaarOtp": {

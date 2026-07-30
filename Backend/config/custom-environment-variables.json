@@ -25,7 +25,11 @@
   },
   "otp": {
     "expiryMinutes": "OTP_EXPIRY_MINUTES",
-    "channel": "OTP_CHANNEL"
+    "channel": "OTP_CHANNEL",
+    "bypass": {
+      "enabled": "OTP_BYPASS_ENABLED",
+      "code": "OTP_BYPASS_CODE"
+    }
   },
   "kyc": {
     "aadhaarOtp": {
