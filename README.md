@@ -402,6 +402,8 @@ All routes (except login/health) require admin JWT. Actions also require matchin
 
 ## Production Build
 
+See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full first-time production checklist (env vars, S3, OTP, Nginx, superadmin onboard, smoke tests).
+
 ```bash
 npm run build
 ```
@@ -409,10 +411,12 @@ npm run build
 Outputs:
 - `frontend/bigfun-frontend/dist/bigfun-frontend`
 - `frontend/bigfun-admin/dist/bigfun-admin`
+- `frontend/bigfun-superadmin/dist/bigfun-superadmin`
 
 Update production API URLs in:
 - `frontend/bigfun-frontend/src/environments/environment.prod.ts`
 - `frontend/bigfun-admin/src/environments/environment.prod.ts`
+- `frontend/bigfun-superadmin/src/environments/environment.prod.ts`
 
 Deploy the Backend with `NODE_ENV=production` and environment variables set. Onboard production superadmin with `onboard:superadmin` and keep `Backend/secrets/` off the server disk in favor of a secret manager when possible.
 
