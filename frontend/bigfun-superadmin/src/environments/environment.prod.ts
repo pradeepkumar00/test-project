@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/superadmin',
+  apiUrl: 'https://test-game-17vx.onrender.com/api/superadmin',
 };

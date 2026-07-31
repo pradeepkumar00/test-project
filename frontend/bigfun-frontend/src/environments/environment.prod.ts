@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://api.bigfun.in/api',
+  apiUrl: 'https://test-game-17vx.onrender.com/api',
 };
