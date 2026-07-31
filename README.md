@@ -404,6 +404,8 @@ All routes (except login/health) require admin JWT. Actions also require matchin
 
 See **[DEPLOYMENT.md](./DEPLOYMENT.md)** for the full first-time production checklist (env vars, S3, OTP, Nginx, superadmin onboard, smoke tests).
 
+**Deploying frontends on Vercel?** See **[DEPLOYMENT-VERCEL.md](./DEPLOYMENT-VERCEL.md)** (API still needs Railway/Render/VPS).
+
 ```bash
 npm run build
 ```

@@ -330,8 +330,15 @@ GET  https://sa.yourdomain.com
 
 ---
 
+## 12. Vercel (frontends only)
+
+For a Vercel-specific walkthrough (3 projects + where to host the API), see **[DEPLOYMENT-VERCEL.md](./DEPLOYMENT-VERCEL.md)**.
+
+---
+
 ## Support
 
 - Backend env map: `Backend/config/custom-environment-variables.json`
 - Local template (dev only): `Backend/config/local.example.json`
 - Main README: `README.md`
+- Vercel frontends: `DEPLOYMENT-VERCEL.md`
